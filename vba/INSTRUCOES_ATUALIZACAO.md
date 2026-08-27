@@ -1,6 +1,6 @@
 # Atualização do GERADOR_HISTORICO_FORMANDOS_5_ANOS.xlsm
 
-Três mudanças, todas concentradas num módulo novo (`modAutoPreenche.bas`) + duas
+Quatro mudanças, todas concentradas num módulo novo (`modAutoPreenche.bas`) + duas
 edições pequenas em código que já existia.
 
 ## O que muda
@@ -38,8 +38,14 @@ na coluna do ano correspondente (G a K). Antes ia para a linha 53, fixa no
 código — que é justamente a linha da fórmula de horas (ver item 3), ou seja,
 o valor digitado apagava a fórmula.
 
-As linhas são localizadas **pelo texto do rótulo**, não por número: se o
-modelo mudar de layout, o código continua achando.
+As linhas são localizadas **pelo texto do rótulo**, não por número. No
+`MODELO.xlsx` atual elas são a **36** (BNCC) e a **51** (Parte Diversificada) —
+nem sequenciais, nem onde o código antigo escrevia.
+
+> **Atenção:** no modelo, a linha 36 já vem com **1000** preenchido em G a K, e
+> a linha 51 vem **vazia** em G a K. Se você digitar um valor único, ele
+> substitui o 1000. Para manter a BNCC e preencher só a diversificada, use a
+> forma com barra: `1000/80`.
 
 Um valor único vai para as duas linhas. Para valores diferentes, digite os
 dois separados por barra:
@@ -66,8 +72,10 @@ o fator do seu próprio ano. Nada a configurar.
 
 A linha referenciada (o `52`) **não é fixa no código**: sai da própria fórmula
 que já está no modelo naquela célula; se a célula estiver vazia, cai para a
-linha rotulada `TOTAL DE AULAS` (comparação exata, para não confundir com
-`TOTAL DE AULAS DA BASE NACIONAL COMUM CURRICULAR`).
+linha rotulada `TOTAL DE AULAS ANUAIS (Aulas)`.
+
+O modelo, aliás, já usa `45/60` nas colunas **N** e **O** (8º e 9º ano) — mas o
+programa só preenche de G a K (1º ao 5º), então essas duas não são tocadas.
 
 ## Como instalar
 
@@ -131,6 +139,34 @@ linha rotulada `TOTAL DE AULAS` (comparação exata, para não confundir com
 Os arquivos deste diretório já estão com os passos 3 e 4 aplicados — dá para
 comparar lado a lado se ficar dúvida.
 
+## Conferido contra os arquivos reais
+
+O algoritmo foi rodado contra o `MODELO.xlsx` e o `naturalidade.xlsx` de
+verdade (aba `EF_Concluinte`):
+
+| o que | achou | esperado |
+|---|---|---|
+| `TOTAL DE AULAS DA BASE NACIONAL COMUM CURRICULAR` | linha 36 | 36 ✔ |
+| `TOTAL DE AULAS DA PARTE DIVERSIFICADA` | linha 51 | 51 ✔ |
+| `TOTAL DA CARGA HORÁRIA ANUAL (Horas)` | linha 53 | 53 ✔ |
+| `TOTAL DE AULAS ANUAIS (Aulas)` (reserva do `52`) | linha 52 | 52 ✔ |
+
+Com um aluno de 2018 a 2022, as fórmulas reescritas ficam:
+
+```
+G53 =(G52*50/60)   H53 =(H52*50/60)   I53 =(I52*45/60)   J53 =(J52*45/60)   K53 =(K52*45/60)
+       2018               2019               2020               2021               2022
+```
+
+O `naturalidade.xlsx` tem exatamente os cabeçalhos que a `LoadNaturalidade`
+espera (`Nome`, `Municipio`, `Estado`, `Pais`) e 24 alunos indexados — a fonte
+sempre esteve lá, só não era chamada.
+
+O que **não** foi conferido: as colunas de nascimento na planilha de matrícula
+(fonte b da naturalidade), porque não vi nenhum arquivo de "Lista de alunos".
+Como o `naturalidade.xlsx` é consultado primeiro, isso só importa para um aluno
+que não esteja nele.
+
 ## Como testar
 
 1. Busque um aluno por RA e confira o log: ele diz de onde a naturalidade veio
@@ -139,7 +175,7 @@ comparar lado a lado se ficar dúvida.
 2. Digite `800/200` na carga horária de um ano anterior a 2020 e de um ano de
    2020 em diante, gere, e abra o arquivo de saída:
    - as duas linhas de `TOTAL DE AULAS` com 800 e 200 na coluna certa;
-   - a linha de horas com `=(G52*50/60)` na coluna do ano antigo e
+   - a linha 53 com `=(G52*50/60)` na coluna do ano antigo e
      `=(H52*45/60)` na coluna do ano novo.
 
 ## Observação sobre acentos no código

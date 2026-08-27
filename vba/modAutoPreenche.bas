@@ -2,18 +2,19 @@ Attribute VB_Name = "modAutoPreenche"
 Option Explicit
 
 ' =====================================================================
-' modAutoPreenche - duas coisas:
+' modAutoPreenche - tres coisas:
 '
 '   1) Naturalidade automatica: descobre municipio / UF / pais de
 '      nascimento do aluno sozinho, sem o usuario digitar. Procura em
 '      duas fontes, nesta ordem:
-'        a) colunas de nascimento na propria planilha de matricula do
-'           ano (ex.: "Municipio de Nascimento", "UF de Nascimento",
-'           "Pais de Nascimento", ou uma coluna "Naturalidade");
-'        b) um arquivo "naturalidade.xlsx" (ou .htm) em qualquer lugar
+'        a) um arquivo "naturalidade.xlsx" (ou .htm) em qualquer lugar
 '           dentro da pasta de trabalho, com colunas Nome / Municipio /
 '           Estado / Pais - o mesmo formato que LoadNaturalidade (em
-'           modLeitura) sempre soube ler.
+'           modLeitura) sempre soube ler, e que ninguem chamava;
+'        b) colunas de nascimento na propria planilha de matricula do
+'           ano (ex.: "Municipio de Nascimento", "UF de Nascimento",
+'           "Pais de Nascimento", ou uma coluna "Naturalidade"), caso o
+'           aluno nao esteja no arquivo acima.
 '
 '   2) Carga horaria: escreve o valor digitado nas linhas
 '      "TOTAL DE AULAS DA BASE NACIONAL COMUM CURRICULAR" e
@@ -33,7 +34,8 @@ Option Explicit
 '        ano < 2020  -> =(G52*50/60)   (aula de 50 minutos, como esta no modelo)
 '        ano >= 2020 -> =(G52*45/60)   (aula de 45 minutos)
 '      A linha referenciada (o "52") nao e fixa no codigo: sai da propria
-'      formula que ja esta no modelo, ou da linha "TOTAL DE AULAS".
+'      formula que ja esta no modelo, ou da linha
+'      "TOTAL DE AULAS ANUAIS (Aulas)".
 '
 ' Modulo autocontido: so usa funcoes que ja existem em modNucleo e
 ' modLeitura. Escrito sem acentos de proposito (o VBE importa .bas como
@@ -54,7 +56,7 @@ Private gRowTotalAulas As Long
 Public Const RotuloTotalBncc As String = "TOTAL DE AULAS DA BASE NACIONAL COMUM CURRICULAR"
 Public Const RotuloTotalDiver As String = "TOTAL DE AULAS DA PARTE DIVERSIFICADA"
 Public Const RotuloTotalHoras As String = "TOTAL DA CARGA HORARIA ANUAL"
-Public Const RotuloTotalAulas As String = "TOTAL DE AULAS"
+Public Const RotuloTotalAulas As String = "TOTAL DE AULAS ANUAIS"
 
 ' A partir deste ano a aula passou a ter 45 minutos (antes, 50).
 Public Const AnoAula45 As Long = 2020
@@ -133,10 +135,10 @@ Public Function BuscarNaturalidadeAuto(ByVal tl As clsTimeline, ByVal ano As Lon
     origem = ""
 
     Dim de As String
-    If NaturalidadeDaMatricula(ano, tl.Cadastro.ra, n, de) Then
-        origem = "Naturalidade preenchida automaticamente da matricula (" & de & ") - confira antes de gerar."
-    ElseIf NaturalidadeDoArquivo(tl.nome, n, de) Then
+    If NaturalidadeDoArquivo(tl.nome, n, de) Then
         origem = "Naturalidade preenchida automaticamente de " & de & " - confira antes de gerar."
+    ElseIf NaturalidadeDaMatricula(ano, tl.Cadastro.ra, n, de) Then
+        origem = "Naturalidade preenchida automaticamente da matricula (" & de & ") - confira antes de gerar."
     End If
 
     If n.Municipio <> "" And n.pais = "" Then n.pais = "BRASIL"
@@ -150,7 +152,7 @@ Public Function BuscarNaturalidadeAuto(ByVal tl As clsTimeline, ByVal ano As Lon
     Set BuscarNaturalidadeAuto = n
 End Function
 
-' ---------- fonte (a): colunas de nascimento na planilha de matricula ----------
+' ---------- fonte (b): colunas de nascimento na planilha de matricula ----------
 
 Private Function NaturalidadeDaMatricula(ByVal ano As Long, ByVal ra As String, ByVal n As clsNaturalidade, ByRef de As String) As Boolean
     Dim target As String
@@ -241,7 +243,7 @@ Private Function ColContendo(ByVal ws As Worksheet, ByVal headerRow As Long, ByV
     Next c
 End Function
 
-' ---------- fonte (b): arquivo naturalidade.xlsx ----------
+' ---------- fonte (a): arquivo naturalidade.xlsx ----------
 
 Private Function NaturalidadeDoArquivo(ByVal nome As String, ByVal n As clsNaturalidade, ByRef de As String) As Boolean
     Dim path As String
@@ -437,9 +439,7 @@ Private Sub ResolverLinhasTotal(ByVal ws As Worksheet)
     gRowBncc = LinhaPorRotulo(ws, RotuloTotalBncc)
     gRowDiver = LinhaPorRotulo(ws, RotuloTotalDiver)
     gRowHoras = LinhaPorRotulo(ws, RotuloTotalHoras)
-    ' "TOTAL DE AULAS" sozinho: precisa ser igual, senao casaria com
-    ' "TOTAL DE AULAS DA BASE NACIONAL COMUM CURRICULAR".
-    gRowTotalAulas = LinhaPorRotuloExato(ws, RotuloTotalAulas)
+    gRowTotalAulas = LinhaPorRotulo(ws, RotuloTotalAulas)
 End Sub
 
 Private Function LinhaPorRotulo(ByVal ws As Worksheet, ByVal rotulo As String) As Long
@@ -455,25 +455,6 @@ Private Function LinhaPorRotulo(ByVal ws As Worksheet, ByVal rotulo As String) A
         For c = firstCol To lastCol
             If InStr(NormSubject(CellText(ws.Cells(r, c))), alvo) > 0 Then
                 LinhaPorRotulo = r
-                Exit Function
-            End If
-        Next c
-    Next r
-End Function
-
-Private Function LinhaPorRotuloExato(ByVal ws As Worksheet, ByVal rotulo As String) As Long
-    Dim alvo As String
-    alvo = NormSubject(rotulo)
-    Dim firstRow As Long, lastRow As Long, firstCol As Long, lastCol As Long
-    firstRow = ws.UsedRange.row
-    lastRow = firstRow + ws.UsedRange.rows.Count - 1
-    firstCol = ws.UsedRange.Column
-    lastCol = firstCol + ws.UsedRange.Columns.Count - 1
-    Dim r As Long, c As Long
-    For r = firstRow To lastRow
-        For c = firstCol To lastCol
-            If NormSubject(CellText(ws.Cells(r, c))) = alvo Then
-                LinhaPorRotuloExato = r
                 Exit Function
             End If
         Next c
