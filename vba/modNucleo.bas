@@ -27,7 +27,8 @@ Public gMapaoCache As Object       ' Dictionary: path -> clsNotasFechamento
 ' Único computador/pasta onde este arquivo roda — usado como garantia
 ' caso a conversão do endereço de nuvem abaixo não bata com uma pasta
 ' local de verdade (ex.: formato de URL diferente do esperado).
-Public Const FallbackLocalBaseDir As String = "C:\Users\oziel\OneDrive\Desktop\HISTÓRICOS"
+' FallbackLocalBaseDir foi substituida por PastaHistoricosLocal(), em
+' modAutoPreenche - ver comentario la.
 
 Public Function BaseDir() As String
     Dim p As String
@@ -35,7 +36,9 @@ Public Function BaseDir() As String
     If LCase$(Left$(p, 4)) = "http" Then
         p = ResolveOneDriveCloudPath(p)
         If LCase$(Left$(p, 4)) = "http" Or Not FolderReallyExists(p) Then
-            p = FallbackLocalBaseDir
+            ' antes: FallbackLocalBaseDir (perfil de usuario fixo, que so
+            ' existia numa das maquinas). Agora a pasta e procurada.
+            p = PastaHistoricosLocal()
         End If
     End If
     BaseDir = p

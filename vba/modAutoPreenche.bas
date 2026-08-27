@@ -68,6 +68,60 @@ Public Sub ResetNaturalidadeCache()
 End Sub
 
 ' =====================================================================
+' 0) PASTA DE TRABALHO (reserva, quando o OneDrive devolve endereco de nuvem)
+' =====================================================================
+
+' Substitui a constante FallbackLocalBaseDir, que apontava para um
+' perfil de usuario fixo ("C:\Users\oziel\OneDrive\Desktop\...") e nao
+' existe nas maquinas onde o perfil e outro (ex.: "oziel.mattos", sem
+' OneDrive). Aqui a pasta e procurada de verdade: para cada Desktop
+' possivel deste usuario, pega a subpasta cujo nome comeca com
+' "HISTORICOS" (ignorando acento e maiuscula/minuscula) - por isso o
+' codigo nao precisa ter o acento de "HISTORICOS" escrito nele.
+Public Function PastaHistoricosLocal() As String
+    Dim raizes(1 To 4) As String
+    Dim perfil As String
+    perfil = Environ$("USERPROFILE")
+
+    raizes(1) = perfil & "\Desktop"
+    raizes(2) = perfil & "\OneDrive\Desktop"
+    raizes(3) = "C:\Users\oziel.mattos\Desktop"
+    raizes(4) = "C:\Users\oziel\OneDrive\Desktop"
+
+    Dim i As Integer
+    For i = 1 To 4
+        If raizes(i) <> "\Desktop" And raizes(i) <> "\OneDrive\Desktop" Then
+            Dim achou As String
+            achou = SubpastaComecandoCom(raizes(i), "HISTORICOS")
+            If achou <> "" Then
+                PastaHistoricosLocal = achou
+                Exit Function
+            End If
+        End If
+    Next i
+
+    ' nada encontrado: devolve o palpite mais provavel, so pra mensagem
+    ' de erro mais adiante mostrar um caminho concreto
+    PastaHistoricosLocal = perfil & "\Desktop\HISTORICOS"
+End Function
+
+Private Function SubpastaComecandoCom(ByVal raiz As String, ByVal prefixo As String) As String
+    Dim fso As Object
+    On Error Resume Next
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If fso Is Nothing Then Exit Function
+    If Not fso.FolderExists(raiz) Then Exit Function
+    Dim f As Object
+    For Each f In fso.GetFolder(raiz).SubFolders
+        If Left$(NormName(f.Name), Len(prefixo)) = prefixo Then
+            SubpastaComecandoCom = f.path
+            Exit Function
+        End If
+    Next f
+    On Error GoTo 0
+End Function
+
+' =====================================================================
 ' 1) NATURALIDADE AUTOMATICA
 ' =====================================================================
 

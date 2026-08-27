@@ -150,6 +150,8 @@ importação antiga com a codificação errada. Não mexi nisso aqui, mas as
 mensagens aparecem assim para o usuário no log; vale corrigir num passe
 separado.
 
+**Também nesta leva:** a constante `FallbackLocalBaseDir` (`C:\Users\oziel\OneDrive\Desktop\HISTÓRICOS`) apontava para um perfil de usuário fixo e não existe na máquina `oziel.mattos`. Foi trocada por `PastaHistoricosLocal()`, que procura a pasta `HISTÓRICOS` no Desktop (com e sem OneDrive) do usuário logado. É a única edição em `modNucleo` — uma linha em `BaseDir()`.
+
 Por causa disso, `modAutoPreenche.bas` foi escrito **sem nenhum acento**: o
 editor do VBA importa `.bas` como ANSI, e acento em arquivo UTF-8 vira lixo na
 importação.
