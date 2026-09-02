@@ -1,0 +1,1034 @@
+<title>Beat &amp; Repeat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=DM+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --ground:#E8EAF0;
+  --surface:#FBFCFE;
+  --surface-2:#F0F2F8;
+  --ink:#14161F;
+  --ink-2:#454B62;
+  --muted:#787F96;
+  --line:#D2D7E3;
+  --line-strong:#B9C0D1;
+  --beat:#D6224E;
+  --beat-ink:#FFFFFF;
+  --beat-soft:#FAE1E7;
+  --ok:#0F8B7E;
+  --ok-soft:#DCEFEC;
+  --shadow:0 1px 2px rgba(20,22,31,.06), 0 8px 24px -12px rgba(20,22,31,.22);
+  --display:"Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1118;
+    --surface:#181B24;
+    --surface-2:#212533;
+    --ink:#ECEEF5;
+    --ink-2:#B4BACD;
+    --muted:#7C8399;
+    --line:#2A2F3E;
+    --line-strong:#3B4256;
+    --beat:#FF4D6D;
+    --beat-ink:#15161E;
+    --beat-soft:#38141F;
+    --ok:#33C2AF;
+    --ok-soft:#0E2F2C;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1118;
+  --surface:#181B24;
+  --surface-2:#212533;
+  --ink:#ECEEF5;
+  --ink-2:#B4BACD;
+  --muted:#7C8399;
+  --line:#2A2F3E;
+  --line-strong:#3B4256;
+  --beat:#FF4D6D;
+  --beat-ink:#15161E;
+  --beat-soft:#38141F;
+  --ok:#33C2AF;
+  --ok-soft:#0E2F2C;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--display);
+  -webkit-text-size-adjust:100%;
+  overflow-x:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--beat);outline-offset:2px;border-radius:4px}
+
+.app{
+  max-width:470px;
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  background:var(--surface);
+  display:flex;
+  flex-direction:column;
+  border-inline:1px solid var(--line);
+}
+@media (max-width:480px){ .app{border-inline:none} }
+
+/* ---------- barra superior ---------- */
+.top{
+  position:sticky;top:0;z-index:20;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;
+  padding:14px 18px;
+}
+.marca{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em;font-size:1.05rem}
+.marca .sinal{
+  width:11px;height:11px;border-radius:50%;
+  background:var(--beat);flex:none;
+  box-shadow:0 0 0 4px var(--beat-soft);
+}
+.top .direita{margin-left:auto;display:flex;align-items:center;gap:8px}
+.ofensiva{
+  font-family:var(--mono);font-size:.72rem;color:var(--ink-2);
+  background:var(--surface-2);border:1px solid var(--line);
+  padding:5px 9px;border-radius:999px;white-space:nowrap;
+}
+.btn-icone{
+  width:36px;height:36px;border-radius:9px;display:grid;place-items:center;
+  color:var(--ink-2);border:1px solid var(--line);background:var(--surface-2);
+}
+.btn-icone:hover{color:var(--ink);border-color:var(--line-strong)}
+
+/* ---------- lista ---------- */
+.corpo{flex:1;padding:18px 18px 40px;display:flex;flex-direction:column;gap:22px}
+
+.intro{
+  border:1px solid var(--line);
+  border-left:3px solid var(--beat);
+  background:var(--surface-2);
+  border-radius:4px 10px 10px 4px;
+  padding:14px 16px;
+  display:flex;flex-direction:column;gap:7px;
+}
+.intro h2{margin:0;font-size:.95rem;font-weight:600;letter-spacing:-.01em}
+.intro p{margin:0;font-size:.85rem;line-height:1.55;color:var(--ink-2);max-width:60ch}
+
+.secao-rotulo{
+  font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);display:flex;align-items:center;gap:10px;
+}
+.secao-rotulo::after{content:"";flex:1;height:1px;background:var(--line)}
+
+.lista{display:flex;flex-direction:column}
+.linha-chant{
+  display:grid;
+  grid-template-columns:38px 1fr auto;
+  align-items:center;
+  gap:14px;
+  padding:15px 4px;
+  text-align:left;
+  width:100%;
+  border-bottom:1px solid var(--line);
+}
+.lista .linha-chant:first-child{border-top:1px solid var(--line)}
+.linha-chant:hover{background:var(--surface-2)}
+.linha-chant .num{
+  font-family:var(--mono);font-size:.95rem;color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.linha-chant.completo .num{color:var(--ok)}
+.linha-chant .tit{display:block;font-weight:600;font-size:1.02rem;letter-spacing:-.015em;line-height:1.25}
+.linha-chant .foco{display:block;font-size:.78rem;color:var(--muted);margin-top:3px;line-height:1.35}
+.passos{display:flex;gap:3px;flex:none}
+.passos i{
+  display:block;width:7px;height:20px;border-radius:2px;
+  background:var(--line);
+}
+.passos i.feito{background:var(--ok)}
+.linha-chant .tempo{
+  font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  display:block;margin-top:5px;font-variant-numeric:tabular-nums;
+}
+
+.rodape-nota{
+  font-size:.75rem;color:var(--muted);line-height:1.6;
+  border-top:1px solid var(--line);padding-top:14px;max-width:60ch;
+}
+.rodape-nota b{color:var(--ink-2);font-weight:500}
+
+/* ---------- tela do chant ---------- */
+.cabeca-chant{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px 18px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:20;background:var(--surface);
+}
+.cabeca-chant .voltar{
+  width:36px;height:36px;flex:none;border-radius:9px;display:grid;place-items:center;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+}
+.cabeca-chant h1{margin:0;font-size:1.02rem;font-weight:600;letter-spacing:-.015em;line-height:1.3}
+.cabeca-chant .sub{
+  font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-top:4px;
+  display:flex;gap:10px;flex-wrap:wrap;font-variant-numeric:tabular-nums;
+}
+
+/* etapas */
+.etapas{display:flex;gap:6px;padding:14px 18px 0}
+.etapa{
+  flex:1;padding:9px 4px 8px;border-radius:8px;text-align:center;
+  border:1px solid var(--line);background:var(--surface-2);
+  font-size:.76rem;font-weight:500;color:var(--ink-2);line-height:1.2;
+}
+.etapa .idx{
+  display:block;font-family:var(--mono);font-size:.62rem;color:var(--muted);
+  letter-spacing:.08em;margin-bottom:3px;
+}
+.etapa[aria-selected="true"]{
+  background:var(--ink);color:var(--surface);border-color:var(--ink);
+}
+.etapa[aria-selected="true"] .idx{color:var(--surface);opacity:.6}
+.etapa.feita:not([aria-selected="true"]){border-color:var(--ok);color:var(--ok)}
+.etapa[disabled]{opacity:.4;cursor:not-allowed}
+
+.instrucao{
+  padding:14px 18px 0;font-size:.84rem;color:var(--ink-2);line-height:1.55;max-width:60ch;
+}
+
+/* palco */
+.palco{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  gap:26px;padding:24px 18px 30px;min-height:330px;
+}
+
+.compasso{display:flex;gap:8px;justify-content:center;align-items:flex-end}
+.passo{
+  width:52px;height:38px;border-radius:6px;
+  border:1px solid var(--line-strong);background:var(--surface-2);
+  display:grid;place-items:center;
+  font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  transition:background .06s linear, color .06s linear, transform .06s linear;
+}
+.passo.forte{border-color:var(--ink-2)}
+.passo.ativo{
+  background:var(--beat);border-color:var(--beat);color:var(--beat-ink);
+  transform:translateY(-3px);
+}
+.passo.ativo.forte{transform:translateY(-5px) scale(1.04)}
+
+.letra{
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;
+  gap:0 12px;min-height:96px;
+}
+.grupo{display:flex;align-items:baseline;gap:0}
+.tk{
+  transition:color .08s linear;
+  color:var(--ink-2);font-size:1.15rem;font-weight:400;letter-spacing:-.01em;
+}
+.tk.on{
+  color:var(--ink);font-size:2rem;font-weight:600;letter-spacing:-.03em;
+  position:relative;
+}
+.tk.on::before{
+  content:"";position:absolute;top:-.42em;left:50%;transform:translateX(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--line-strong);
+}
+.tk.hifen::before{content:"-";color:var(--muted);font-weight:400}
+.tk.hifen-depois::after{content:"-";color:var(--muted);font-weight:400}
+.tk.tocando{color:var(--beat)}
+.pausa{
+  display:block;width:9px;height:2px;border-radius:1px;background:var(--line-strong);
+  align-self:center;margin-bottom:.55em;
+}
+.tk.on.tocando::before{background:var(--beat)}
+.letra.silencio .tk{opacity:.28}
+
+.traducao{
+  text-align:center;font-size:.9rem;color:var(--muted);line-height:1.5;
+  min-height:1.4em;max-width:52ch;margin-inline:auto;
+}
+.traducao[hidden]{display:none!important}
+
+.sua-vez{
+  text-align:center;font-family:var(--mono);font-size:.75rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--beat);min-height:1.2em;
+}
+
+/* pergunta de tempo */
+.pergunta{
+  margin:0 18px;padding:16px;border:1px solid var(--beat);background:var(--beat-soft);
+  border-radius:10px;display:flex;flex-direction:column;gap:12px;
+}
+.pergunta p{margin:0;font-size:.9rem;line-height:1.5;color:var(--ink)}
+.pergunta .opcoes{display:flex;gap:8px}
+.pergunta button{
+  flex:1;padding:11px;border-radius:8px;font-size:.85rem;font-weight:500;
+  border:1px solid var(--line-strong);background:var(--surface);
+}
+.pergunta button.sim{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+/* transporte */
+.transporte{
+  position:sticky;bottom:0;z-index:20;
+  background:var(--surface);border-top:1px solid var(--line);
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:14px;
+}
+.tocar{
+  width:60px;height:60px;flex:none;border-radius:50%;
+  background:var(--beat);color:var(--beat-ink);
+  display:grid;place-items:center;
+  box-shadow:var(--shadow);
+}
+.tocar svg{width:24px;height:24px;display:none}
+.tocar[data-estado="parado"] #iconePlay{display:block}
+.tocar[data-estado="tocando"] #iconePause{display:block}
+.andamento{display:flex;align-items:center;gap:8px}
+.andamento .bpm{
+  font-family:var(--mono);font-size:1.35rem;font-weight:500;
+  font-variant-numeric:tabular-nums;line-height:1;min-width:2.7ch;text-align:center;
+}
+.andamento .bpm small{display:block;font-size:.58rem;letter-spacing:.1em;color:var(--muted);margin-top:3px}
+.passo-bpm{
+  width:34px;height:34px;border-radius:8px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink-2);font-size:1.1rem;line-height:1;
+  display:grid;place-items:center;
+}
+.alternadores{margin-left:auto;display:flex;flex-direction:column;gap:6px}
+.chave{
+  display:flex;align-items:center;gap:7px;font-size:.72rem;color:var(--ink-2);
+  border:1px solid var(--line);background:var(--surface-2);
+  padding:5px 9px;border-radius:999px;white-space:nowrap;
+}
+.chave .luz{width:7px;height:7px;border-radius:50%;background:var(--line-strong);flex:none}
+.chave[aria-pressed="true"]{border-color:var(--ink-2);color:var(--ink)}
+.chave[aria-pressed="true"] .luz{background:var(--ok)}
+
+.aviso{
+  margin:0 18px;padding:11px 13px;border-radius:8px;
+  background:var(--surface-2);border:1px solid var(--line);
+  font-size:.79rem;color:var(--ink-2);line-height:1.5;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .passo,.tk{transition:none}
+  .passo.ativo,.passo.ativo.forte{transform:none}
+}
+</style>
+
+<div class="app">
+
+  <!-- ===================== TELA: LISTA ===================== -->
+  <div id="telaLista">
+    <header class="top">
+      <div class="marca"><span class="sinal"></span>Beat &amp; Repeat</div>
+      <div class="direita">
+        <span class="ofensiva" id="ofensiva">— dias</span>
+        <button class="btn-icone" id="btnTema" title="Alternar tema claro/escuro" aria-label="Alternar tema claro ou escuro">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 13.5A8 8 0 1 1 10.5 4a6.5 6.5 0 0 0 9.5 9.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="corpo">
+      <div class="intro">
+        <h2>Inglês no ritmo, não na decoreba</h2>
+        <p>Cada frase aqui é um <em>jazz chant</em>: a sílaba forte cai na batida. Você ouve, repete e acelera até a frase sair sozinha — que é como o inglês falado de verdade funciona. A batida e a voz são geradas no seu celular.</p>
+      </div>
+
+      <div>
+        <div class="secao-rotulo">10 chants · nível A1–A2</div>
+        <div class="lista" id="lista"></div>
+      </div>
+
+      <p class="rodape-nota" id="notaRodape">
+        <b>Como usar:</b> escolha um chant, toque no botão vermelho e bata o pé junto. Cada chant tem 4 etapas — ouvir, repetir, acompanhar e acelerar — e a próxima só abre depois da anterior. Seu progresso fica salvo neste aparelho.
+      </p>
+    </main>
+  </div>
+
+  <!-- ===================== TELA: CHANT ===================== -->
+  <div id="telaChant" hidden>
+    <header class="cabeca-chant">
+      <button class="voltar" id="btnVoltar" aria-label="Voltar para a lista">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <h1 id="chantTitulo">—</h1>
+        <div class="sub">
+          <span id="chantFoco">—</span>
+          <span aria-hidden="true">·</span>
+          <span id="chantTempo">♩ = 76</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="etapas" id="etapas" role="tablist" aria-label="Etapas de prática"></div>
+    <p class="instrucao" id="instrucao"></p>
+    <div class="aviso" id="avisoVoz" hidden></div>
+
+    <div class="palco">
+      <div class="compasso" id="compasso"></div>
+      <div class="letra" id="letra"></div>
+      <div class="traducao" id="traducao" hidden></div>
+      <div class="sua-vez" id="suaVez"></div>
+    </div>
+
+    <div class="pergunta" id="pergunta" hidden>
+      <p id="perguntaTexto"></p>
+      <div class="opcoes">
+        <button class="sim" id="btnConsegui">Consegui acompanhar</button>
+        <button id="btnAindaNao">Ainda não</button>
+      </div>
+    </div>
+
+    <div class="transporte">
+      <button class="tocar" id="btnTocar" data-estado="parado" aria-label="Tocar">
+        <svg id="iconePlay" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5Z"/></svg>
+        <svg id="iconePause" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.4v14H7V5Zm6.6 0H17v14h-3.4V5Z"/></svg>
+      </button>
+      <div class="andamento">
+        <button class="passo-bpm" id="bpmMenos" aria-label="Diminuir andamento">–</button>
+        <div class="bpm" id="bpmValor">76<small>BPM</small></div>
+        <button class="passo-bpm" id="bpmMais" aria-label="Aumentar andamento">+</button>
+      </div>
+      <div class="alternadores">
+        <button class="chave" id="chaveVoz" aria-pressed="true"><span class="luz"></span>Voz</button>
+        <button class="chave" id="chaveTraducao" aria-pressed="false"><span class="luz"></span>Tradução</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================================
+   Beat & Repeat — jazz chants para inglês A1–A2
+   Um arquivo, sem dependências. Batida via Web Audio, voz via speechSynthesis.
+
+   Notação das linhas: "|" separa as 4 batidas do compasso, o espaço separa
+   palavras dentro da batida e "-" separa sílabas. O primeiro token de cada
+   batida é o que CAI na batida (a sílaba tônica). Batida vazia = pausa.
+   ========================================================================= */
+
+/* ----------------------------- conteúdo ----------------------------- */
+const L = (padrao, traducao) => ({ padrao, traducao });
+
+const CHANTS = [
+  { id:"cumprimentos", titulo:"Hello, How Are You?", foco:"Cumprimentos e respostas curtas", bpm:76, linhas:[
+    L("Hel-lo, | hel-lo, | how are | you?", "Olá, olá, como vai você?"),
+    L("I'm | fine, | how a-bout | you?", "Eu estou bem, e você?"),
+    L("Good mor-ning, | tea-cher! | | ", "Bom dia, professor(a)!"),
+    L("Good af-ter-noon! | | Good night! | ", "Boa tarde! Boa noite!"),
+    L("See you | la-ter, | see you | soon!", "Até mais tarde, até logo!"),
+    L("Bye | bye! | Bye | bye!", "Tchau, tchau!")
+  ]},
+  { id:"tobe", titulo:"I Am, You Are", foco:"Verbo to be no afirmativo e negativo", bpm:76, linhas:[
+    L("I | am | here. | ", "Eu estou aqui."),
+    L("You | are | there. | ", "Você está aí."),
+    L("He is | hap-py, | she is | sad.", "Ele está feliz, ela está triste."),
+    L("We are | rea-dy, | they are | late.", "Nós estamos prontos, eles estão atrasados."),
+    L("I'm not | ti-red, | I'm not | cold.", "Não estou cansado, não estou com frio."),
+    L("Are you | rea-dy? | Yes, I | am!", "Você está pronto? Sim, estou!")
+  ]},
+  { id:"perguntas", titulo:"What's Your Name?", foco:"Perguntas com what, where e how", bpm:80, linhas:[
+    L("What's your | name? | What's your | name?", "Qual é o seu nome?"),
+    L("My name | is | A-na. | ", "Meu nome é Ana."),
+    L("Where are | you | from? | ", "De onde você é?"),
+    L("I'm from | Bra- | zil. | ", "Eu sou do Brasil."),
+    L("How old | are | you? | ", "Quantos anos você tem?"),
+    L("I'm twen-ty | four | years | old.", "Eu tenho vinte e quatro anos.")
+  ]},
+  { id:"numeros", titulo:"One, Two, Three", foco:"Números de 1 a 30 e contas simples", bpm:84, linhas:[
+    L("One, | two, | three, | four,", "Um, dois, três, quatro,"),
+    L("five, | six, | se-ven, | eight,", "cinco, seis, sete, oito,"),
+    L("nine, | ten, | e-le-ven, | twelve!", "nove, dez, onze, doze!"),
+    L("Count with | me a-gain, | count with | me!", "Conte comigo de novo, conte comigo!"),
+    L("Ten and | ten | is | twen-ty.", "Dez mais dez são vinte."),
+    L("Twen-ty | plus ten | is | thir-ty!", "Vinte mais dez são trinta!")
+  ]},
+  { id:"familia", titulo:"This Is My Family", foco:"Família e possessivos (my, your)", bpm:78, linhas:[
+    L("This is | my | fa-mi-ly. | ", "Esta é a minha família."),
+    L("This is | my | mo-ther. | ", "Esta é a minha mãe."),
+    L("That is | my | fa-ther. | ", "Aquele é o meu pai."),
+    L("My | bro-ther | is | tall.", "Meu irmão é alto."),
+    L("My | sis-ter | is | small.", "Minha irmã é pequena."),
+    L("And I | love | them | all!", "E eu amo todos eles!")
+  ]},
+  { id:"rotina", titulo:"I Get Up at Seven", foco:"Rotina, present simple e horas", bpm:84, linhas:[
+    L("I get | up | at | se-ven.", "Eu levanto às sete."),
+    L("I brush | my | teeth | at eight.", "Eu escovo os dentes às oito."),
+    L("I go | to | school | at nine.", "Eu vou para a escola às nove."),
+    L("I ne-ver, | ne-ver | come | late!", "Eu nunca, nunca chego atrasado!"),
+    L("What time | do you | wake | up?", "Que horas você acorda?"),
+    L("I wake | up | at | six.", "Eu acordo às seis.")
+  ]},
+  { id:"gostos", titulo:"I Like Pizza", foco:"Like / don't like e doesn't", bpm:86, linhas:[
+    L("I like | piz-za, | I like | rice.", "Eu gosto de pizza, eu gosto de arroz."),
+    L("I don't | like | fish. | ", "Eu não gosto de peixe."),
+    L("Do you | like | cof-fee? | ", "Você gosta de café?"),
+    L("Yes, I | do! | No, I | don't!", "Sim, eu gosto! Não, eu não gosto!"),
+    L("She likes | choc-o-late | a | lot.", "Ela gosta muito de chocolate."),
+    L("He does-n't | like it | at | all.", "Ele não gosta nada disso.")
+  ]},
+  { id:"can", titulo:"I Can Swim", foco:"Can e can't para habilidade e pedido", bpm:88, linhas:[
+    L("I can | swim, | I can | run.", "Eu sei nadar, eu sei correr."),
+    L("I can | sing | in the | sun!", "Eu sei cantar no sol!"),
+    L("I can't | fly, | I can't | drive.", "Eu não sei voar, eu não sei dirigir."),
+    L("Can you | help | me, | please?", "Você pode me ajudar, por favor?"),
+    L("Yes, I | can! | Yes, I | can!", "Sim, eu posso! Sim, eu posso!"),
+    L("Can she | dance? | She sure | can!", "Ela sabe dançar? Com certeza sabe!")
+  ]},
+  { id:"there", titulo:"There's a Cat on the Sofa", foco:"There is / there are e lugares", bpm:80, linhas:[
+    L("There's a | cat | on the | so-fa.", "Tem um gato no sofá."),
+    L("There's a | dog | un-der the | ta-ble.", "Tem um cachorro embaixo da mesa."),
+    L("There are | books | on the | shelf.", "Tem livros na estante."),
+    L("There is | no | milk | in the fridge.", "Não tem leite na geladeira."),
+    L("Is there | a | key | in the box?", "Tem uma chave na caixa?"),
+    L("No, there | is-n't. | Look a- | gain!", "Não, não tem. Olhe de novo!")
+  ]},
+  { id:"continuous", titulo:"What Are You Doing?", foco:"Present continuous (-ing) agora", bpm:84, linhas:[
+    L("What are | you | do-ing | now?", "O que você está fazendo agora?"),
+    L("I am | eat-ing. | I am | drink-ing.", "Estou comendo. Estou bebendo."),
+    L("She is | read-ing. | He is | sleep-ing.", "Ela está lendo. Ele está dormindo."),
+    L("We are | learn-ing | Eng-lish | now!", "Estamos aprendendo inglês agora!"),
+    L("They are | sing-ing | in the | rain.", "Eles estão cantando na chuva."),
+    L("Say it | fast | and | say it a-gain!", "Fale rápido e fale de novo!")
+  ]}
+];
+
+/* Converte "Hel-lo, | hel-lo, | how are | you?" em 4 batidas de tokens. */
+function compilar(padrao){
+  return padrao.split("|").map(bruto => {
+    const texto = bruto.trim();
+    if(!texto) return [];
+    const tokens = [];
+    texto.split(/\s+/).forEach((palavra, iPalavra) => {
+      const continua = palavra.endsWith("-");   /* a palavra atravessa a barra de compasso */
+      palavra.split("-").forEach((silaba, iSilaba) => {
+        if(silaba === "") return;
+        tokens.push({ t:silaba, hifen:iSilaba > 0, novaPalavra:iSilaba === 0 && iPalavra > 0 });
+      });
+      if(continua && tokens.length) tokens[tokens.length - 1].hifenDepois = true;
+    });
+    return tokens;
+  });
+}
+function falado(padrao){
+  return padrao
+    .replace(/-\s*\|\s*/g, "")   /* "Look a- | gain!" -> "Look again!" */
+    .replace(/\|/g, " ")
+    .replace(/-/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+CHANTS.forEach(c => c.linhas.forEach(l => {
+  l.batidas = compilar(l.padrao);
+  l.texto = falado(l.padrao);
+}));
+
+const ETAPAS = [
+  { id:"ouvir", nome:"Ouvir", instrucao:"Só escute. Repare em qual sílaba cai a batida — é ela que segura o ritmo do inglês." },
+  { id:"repetir", nome:"Repetir", instrucao:"O app fala uma linha e deixa um compasso inteiro em silêncio. Repita em voz alta nesse espaço." },
+  { id:"acompanhar", nome:"Acompanhar", instrucao:"Agora sem a voz do app: só a batida e as palavras acendendo. Você conduz o chant." },
+  { id:"acelerar", nome:"Acelerar", instrucao:"Mesmo chant, mais rápido. Suba um degrau de cada vez, até chegar perto da fala real." }
+];
+const ESCADA = [76, 88, 100, 112];
+
+/* ----------------------------- memória ----------------------------- */
+const Memoria = {
+  CHAVE:"beat-repeat-v1",
+  dados:{ chants:{}, ultimoDia:null, ofensiva:0 },
+  carregar(){
+    try{
+      const bruto = localStorage.getItem(this.CHAVE);
+      if(bruto) this.dados = Object.assign(this.dados, JSON.parse(bruto));
+    }catch(e){ /* aba anônima ou armazenamento bloqueado: segue sem memória */ }
+    return this.dados;
+  },
+  salvar(){
+    try{ localStorage.setItem(this.CHAVE, JSON.stringify(this.dados)); }catch(e){}
+  },
+  doChant(id){
+    if(!this.dados.chants[id]) this.dados.chants[id] = { etapas:{}, bpmMax:0 };
+    return this.dados.chants[id];
+  },
+  concluir(id, etapa){ this.doChant(id).etapas[etapa] = true; this.salvar(); },
+  registrarBpm(id, bpm){
+    const c = this.doChant(id);
+    if(bpm > (c.bpmMax || 0)){ c.bpmMax = bpm; this.salvar(); }
+  },
+  marcarDia(){
+    const hoje = new Date().toISOString().slice(0,10);
+    if(this.dados.ultimoDia === hoje) return;
+    const ontem = new Date(Date.now() - 864e5).toISOString().slice(0,10);
+    this.dados.ofensiva = (this.dados.ultimoDia === ontem) ? (this.dados.ofensiva || 0) + 1 : 1;
+    this.dados.ultimoDia = hoje;
+    this.salvar();
+  }
+};
+Memoria.carregar();
+
+/* ----------------------------- áudio ----------------------------- */
+const Batida = {
+  ctx:null,
+  ruido:null,
+  async ligar(){
+    if(!this.ctx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return false;
+      this.ctx = new AC();
+      const n = this.ctx.sampleRate * 0.2;
+      this.ruido = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+      const dados = this.ruido.getChannelData(0);
+      for(let i = 0; i < n; i++) dados[i] = Math.random() * 2 - 1;
+    }
+    if(this.ctx.state === "suspended"){ try{ await this.ctx.resume(); }catch(e){} }
+    return this.ctx.state === "running";
+  },
+  agora(){ return this.ctx ? this.ctx.currentTime : 0; },
+
+  bumbo(t){
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(170, t);
+    o.frequency.exponentialRampToValueAtTime(48, t + 0.11);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.85, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.20);
+    o.connect(g).connect(this.ctx.destination);
+    o.start(t); o.stop(t + 0.22);
+  },
+  chimbal(t, forte){
+    const s = this.ctx.createBufferSource(), f = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+    s.buffer = this.ruido;
+    f.type = "highpass";
+    f.frequency.value = forte ? 6500 : 8200;
+    g.gain.setValueAtTime(forte ? 0.30 : 0.13, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + (forte ? 0.06 : 0.035));
+    s.connect(f).connect(g).connect(this.ctx.destination);
+    s.start(t); s.stop(t + 0.09);
+  },
+  tocarBatida(t, indice){
+    if(!this.ctx) return;
+    if(indice === 0){ this.bumbo(t); this.chimbal(t, true); }
+    else{ this.chimbal(t, false); if(indice === 2) this.bumbo(t); }
+  }
+};
+
+/* ----------------------------- voz ----------------------------- */
+const Voz = {
+  disponivel:("speechSynthesis" in window),
+  vozIngles:null,
+  procurar(){
+    if(!this.disponivel) return null;
+    const vozes = window.speechSynthesis.getVoices() || [];
+    this.vozIngles =
+      vozes.find(v => /^en[-_]US/i.test(v.lang)) ||
+      vozes.find(v => /^en[-_]GB/i.test(v.lang)) ||
+      vozes.find(v => /^en/i.test(v.lang)) || null;
+    return this.vozIngles;
+  },
+  falar(texto, bpm){
+    if(!this.disponivel) return;
+    try{
+      window.speechSynthesis.cancel();
+      const f = new SpeechSynthesisUtterance(texto);
+      if(this.vozIngles) f.voice = this.vozIngles;
+      f.lang = this.vozIngles ? this.vozIngles.lang : "en-US";
+      f.rate = Math.min(1.25, Math.max(0.72, bpm / 84));
+      f.pitch = 1;
+      window.speechSynthesis.speak(f);
+    }catch(e){}
+  },
+  calar(){ if(this.disponivel){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
+};
+if(Voz.disponivel){
+  Voz.procurar();
+  window.speechSynthesis.onvoiceschanged = () => { Voz.procurar(); Tela.atualizarAvisoVoz(); };
+}
+
+/* ----------------------------- tocador ----------------------------- */
+const Tocador = {
+  chant:null, etapa:"ouvir", bpm:76,
+  rodando:false, comVoz:true,
+  iLinha:0, iBatida:0, ehEcoDoAluno:false,
+  proximoTempo:0, timer:null, quadro:null, fila:[],
+
+  get intervalo(){ return 60 / this.bpm; },
+
+  async alternar(){
+    if(this.rodando) this.parar();
+    else await this.iniciar();
+  },
+  async iniciar(){
+    const ok = await Batida.ligar();
+    if(!ok && !Voz.disponivel){ Tela.avisar("Este navegador bloqueou o áudio. Toque na tela e tente de novo."); return; }
+    Memoria.marcarDia();
+    Tela.pintarOfensiva();
+    this.rodando = true;
+    this.iLinha = 0; this.iBatida = 0; this.ehEcoDoAluno = false;
+    this.fila = [];
+    this.proximoTempo = Batida.agora() + 0.12;
+    this.timer = setInterval(() => this.agendar(), 25);
+    this.quadro = requestAnimationFrame(() => this.desenhar());
+    Tela.pintarTransporte();
+  },
+  parar(){
+    this.rodando = false;
+    clearInterval(this.timer); this.timer = null;
+    if(this.quadro) cancelAnimationFrame(this.quadro);
+    this.quadro = null; this.fila = [];
+    Voz.calar();
+    Tela.limparDestaque();
+    Tela.pintarTransporte();
+    Tela.dizerSuaVez("");
+  },
+
+  /* agenda ~100 ms à frente usando o relógio do áudio */
+  agendar(){
+    const limite = Batida.agora() + 0.1;
+    while(this.rodando && this.proximoTempo < limite){
+      const evento = {
+        tempo:this.proximoTempo,
+        linha:this.iLinha,
+        batida:this.iBatida,
+        eco:this.ehEcoDoAluno
+      };
+      Batida.tocarBatida(this.proximoTempo, this.iBatida);
+      this.fila.push(evento);
+      this.proximoTempo += this.intervalo;
+      this.avancar();
+    }
+  },
+  avancar(){
+    this.iBatida++;
+    if(this.iBatida < 4) return;
+    this.iBatida = 0;
+    /* no modo "repetir" cada linha ocupa dois compassos: o do app e o seu */
+    if(this.etapa === "repetir" && !this.ehEcoDoAluno){ this.ehEcoDoAluno = true; return; }
+    this.ehEcoDoAluno = false;
+    this.iLinha++;
+    if(this.iLinha >= this.chant.linhas.length){
+      this.iLinha = 0;
+      this.fila.push({ tempo:this.proximoTempo, fim:true });
+    }
+  },
+
+  desenhar(){
+    if(!this.rodando) return;
+    const agora = Batida.agora();
+    while(this.fila.length && this.fila[0].tempo <= agora + 0.01){
+      const ev = this.fila.shift();
+      if(ev.fim){ this.terminarPassada(); return; }
+      this.aplicar(ev);
+    }
+    this.quadro = requestAnimationFrame(() => this.desenhar());
+  },
+  aplicar(ev){
+    const linha = this.chant.linhas[ev.linha];
+    if(ev.batida === 0){
+      Tela.mostrarLinha(linha, ev.eco);
+      const falaAgora = this.comVoz && this.etapa !== "acompanhar" && this.etapa !== "acelerar" && !ev.eco;
+      if(falaAgora) Voz.falar(linha.texto, this.bpm);
+      Tela.dizerSuaVez(this.etapa === "repetir" ? (ev.eco ? "sua vez" : "escute") : "");
+    }
+    Tela.acenderBatida(ev.batida, linha.batidas[ev.batida], ev.eco);
+  },
+  terminarPassada(){
+    this.parar();
+    Memoria.concluir(this.chant.id, this.etapa);
+    if(this.etapa === "acelerar"){
+      Memoria.registrarBpm(this.chant.id, this.bpm);
+      Tela.perguntarTempo();
+    }else{
+      Tela.pintarEtapas();
+      Tela.dizerSuaVez("etapa concluída");
+    }
+  }
+};
+
+/* ----------------------------- telas ----------------------------- */
+const $ = id => document.getElementById(id);
+
+const Tela = {
+  iniciar(){
+    this.montarLista();
+    this.pintarOfensiva();
+    this.atualizarAvisoVoz();
+    $("btnTema").addEventListener("click", () => this.alternarTema());
+    $("btnVoltar").addEventListener("click", () => this.verLista());
+    $("btnTocar").addEventListener("click", () => Tocador.alternar());
+    $("bpmMenos").addEventListener("click", () => this.mudarBpm(-4));
+    $("bpmMais").addEventListener("click", () => this.mudarBpm(4));
+    $("chaveVoz").addEventListener("click", e => {
+      Tocador.comVoz = !Tocador.comVoz;
+      e.currentTarget.setAttribute("aria-pressed", String(Tocador.comVoz));
+      if(!Tocador.comVoz) Voz.calar();
+    });
+    $("chaveTraducao").addEventListener("click", e => {
+      const mostrar = e.currentTarget.getAttribute("aria-pressed") !== "true";
+      e.currentTarget.setAttribute("aria-pressed", String(mostrar));
+      $("traducao").hidden = !mostrar;
+    });
+    $("btnConsegui").addEventListener("click", () => this.subirDegrau(true));
+    $("btnAindaNao").addEventListener("click", () => this.subirDegrau(false));
+  },
+
+  /* --- lista --- */
+  montarLista(){
+    const lista = $("lista");
+    lista.textContent = "";
+    CHANTS.forEach((c, i) => {
+      const salvo = Memoria.dados.chants[c.id] || { etapas:{}, bpmMax:0 };
+      const feitas = ETAPAS.filter(e => salvo.etapas[e.id]).length;
+      const b = document.createElement("button");
+      b.className = "linha-chant" + (feitas === 4 ? " completo" : "");
+      b.innerHTML =
+        '<span class="num">' + String(i + 1).padStart(2, "0") + '</span>' +
+        '<span><span class="tit"></span><span class="foco"></span>' +
+        '<span class="tempo">♩ = ' + c.bpm + (salvo.bpmMax ? ' · recorde ' + salvo.bpmMax : '') + '</span></span>' +
+        '<span class="passos">' + ETAPAS.map(e =>
+          '<i class="' + (salvo.etapas[e.id] ? 'feito' : '') + '"></i>').join("") + '</span>';
+      b.querySelector(".tit").textContent = c.titulo;
+      b.querySelector(".foco").textContent = c.foco;
+      b.addEventListener("click", () => this.verChant(c));
+      lista.appendChild(b);
+    });
+  },
+  pintarOfensiva(){
+    const n = Memoria.dados.ofensiva || 0;
+    $("ofensiva").textContent = n > 0 ? (n + (n === 1 ? " dia" : " dias")) : "comece hoje";
+  },
+
+  verLista(){
+    Tocador.parar();
+    $("telaChant").hidden = true;
+    $("telaLista").hidden = false;
+    this.montarLista();
+    window.scrollTo(0, 0);
+  },
+
+  /* --- chant --- */
+  verChant(chant){
+    Tocador.chant = chant;
+    Tocador.bpm = chant.bpm;
+    Tocador.etapa = this.primeiraEtapaAberta(chant);
+    $("telaLista").hidden = true;
+    $("telaChant").hidden = false;
+    $("chantTitulo").textContent = chant.titulo;
+    $("chantFoco").textContent = chant.foco;
+    $("pergunta").hidden = true;
+    this.montarCompasso();
+    this.pintarEtapas();
+    this.pintarTransporte();
+    this.mostrarLinha(chant.linhas[0], false);
+    this.dizerSuaVez("");
+    window.scrollTo(0, 0);
+  },
+  primeiraEtapaAberta(chant){
+    const salvo = Memoria.dados.chants[chant.id];
+    if(!salvo) return "ouvir";
+    const proxima = ETAPAS.find(e => !salvo.etapas[e.id]);
+    return proxima ? proxima.id : "acelerar";
+  },
+  etapaLiberada(i){
+    if(i === 0) return true;
+    const salvo = Memoria.dados.chants[Tocador.chant.id] || { etapas:{} };
+    return !!salvo.etapas[ETAPAS[i - 1].id];
+  },
+  pintarEtapas(){
+    const alvo = $("etapas");
+    alvo.textContent = "";
+    const salvo = Memoria.dados.chants[Tocador.chant.id] || { etapas:{} };
+    ETAPAS.forEach((e, i) => {
+      const b = document.createElement("button");
+      b.className = "etapa" + (salvo.etapas[e.id] ? " feita" : "");
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", String(e.id === Tocador.etapa));
+      if(!this.etapaLiberada(i)) b.disabled = true;
+      b.innerHTML = '<span class="idx">' + (i + 1) + '</span>';
+      b.appendChild(document.createTextNode(e.nome));
+      b.addEventListener("click", () => {
+        Tocador.parar();
+        Tocador.etapa = e.id;
+        if(e.id === "acelerar") Tocador.bpm = this.degrauAtual();
+        $("pergunta").hidden = true;
+        this.pintarEtapas();
+        this.pintarTransporte();
+      });
+      alvo.appendChild(b);
+    });
+    $("instrucao").textContent = (ETAPAS.find(e => e.id === Tocador.etapa) || ETAPAS[0]).instrucao;
+  },
+  degrauAtual(){
+    const salvo = Memoria.dados.chants[Tocador.chant.id] || { bpmMax:0 };
+    const proximo = ESCADA.find(v => v > (salvo.bpmMax || 0));
+    return proximo || ESCADA[ESCADA.length - 1];
+  },
+
+  montarCompasso(){
+    const alvo = $("compasso");
+    alvo.textContent = "";
+    for(let i = 0; i < 4; i++){
+      const p = document.createElement("div");
+      p.className = "passo" + (i === 0 ? " forte" : "");
+      p.textContent = String(i + 1);
+      alvo.appendChild(p);
+    }
+  },
+  acenderBatida(indice, tokens, eco){
+    const passos = $("compasso").children;
+    for(let i = 0; i < passos.length; i++) passos[i].classList.toggle("ativo", i === indice);
+    const grupos = $("letra").children;
+    for(let i = 0; i < grupos.length; i++){
+      grupos[i].querySelectorAll(".tk").forEach(t => t.classList.toggle("tocando", i === indice && !eco));
+    }
+  },
+  limparDestaque(){
+    Array.from($("compasso").children).forEach(p => p.classList.remove("ativo"));
+    $("letra").querySelectorAll(".tk").forEach(t => t.classList.remove("tocando"));
+    $("letra").classList.remove("silencio");
+  },
+  mostrarLinha(linha, eco){
+    const alvo = $("letra");
+    alvo.textContent = "";
+    alvo.classList.toggle("silencio", !!eco);
+    linha.batidas.forEach(tokens => {
+      const g = document.createElement("span");
+      g.className = "grupo";
+      if(tokens.length === 0){
+        const pausa = document.createElement("span");
+        pausa.className = "pausa";
+        pausa.setAttribute("aria-label", "pausa");
+        g.appendChild(pausa);
+      }
+      tokens.forEach((tk, i) => {
+        const s = document.createElement("span");
+        s.className = "tk" + (i === 0 ? " on" : "") + (tk.hifen ? " hifen" : "") +
+                      (tk.hifenDepois ? " hifen-depois" : "");
+        if(tk.novaPalavra) s.style.marginLeft = ".34em";
+        s.textContent = tk.t;
+        g.appendChild(s);
+      });
+      alvo.appendChild(g);
+    });
+    $("traducao").textContent = linha.traducao;
+  },
+  dizerSuaVez(txt){ $("suaVez").textContent = txt; },
+
+  /* --- transporte --- */
+  pintarTransporte(){
+    $("btnTocar").dataset.estado = Tocador.rodando ? "tocando" : "parado";
+    $("btnTocar").setAttribute("aria-label", Tocador.rodando ? "Pausar" : "Tocar");
+    $("bpmValor").innerHTML = Tocador.bpm + "<small>BPM</small>";
+    $("chantTempo").textContent = "♩ = " + Tocador.bpm;
+  },
+  mudarBpm(delta){
+    Tocador.bpm = Math.min(132, Math.max(56, Tocador.bpm + delta));
+    this.pintarTransporte();
+  },
+
+  perguntarTempo(){
+    const proximo = ESCADA.find(v => v > Tocador.bpm);
+    $("perguntaTexto").textContent = proximo
+      ? "Você acompanhou o chant inteiro a " + Tocador.bpm + " BPM?"
+      : "Você chegou ao topo da escada: " + Tocador.bpm + " BPM. Conseguiu acompanhar?";
+    $("pergunta").hidden = false;
+    this.pintarEtapas();
+  },
+  subirDegrau(conseguiu){
+    $("pergunta").hidden = true;
+    const proximo = ESCADA.find(v => v > Tocador.bpm);
+    if(conseguiu && proximo) Tocador.bpm = proximo;
+    else if(!conseguiu){
+      const anterior = [...ESCADA].reverse().find(v => v < Tocador.bpm);
+      if(anterior) Tocador.bpm = anterior;
+    }
+    this.pintarTransporte();
+    this.dizerSuaVez(conseguiu ? (proximo ? "mais rápido agora" : "chant dominado") : "sem pressa, de novo");
+  },
+
+  avisar(txt){
+    const el = $("avisoVoz");
+    el.textContent = txt;
+    el.hidden = false;
+  },
+  atualizarAvisoVoz(){
+    const el = $("avisoVoz");
+    if(!el) return;
+    if(!Voz.disponivel){
+      el.textContent = "Este navegador não tem voz sintetizada. A batida e as palavras acendendo continuam funcionando — leia em voz alta no ritmo.";
+      el.hidden = false;
+    }else if(!Voz.vozIngles && (window.speechSynthesis.getVoices() || []).length > 0){
+      el.textContent = "Não encontrei uma voz em inglês instalada neste aparelho. Instale um pacote de voz em inglês nas configurações do sistema, ou use as etapas Acompanhar e Acelerar, que não dependem de voz.";
+      el.hidden = false;
+    }else{
+      el.hidden = true;
+    }
+  },
+
+  alternarTema(){
+    const raiz = document.documentElement;
+    const atual = raiz.getAttribute("data-theme");
+    const escuroAgora = atual
+      ? atual === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    raiz.setAttribute("data-theme", escuroAgora ? "light" : "dark");
+    try{ localStorage.setItem("beat-repeat-tema", escuroAgora ? "light" : "dark"); }catch(e){}
+  }
+};
+
+/* tema salvo */
+try{
+  const t = localStorage.getItem("beat-repeat-tema");
+  if(t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+}catch(e){}
+
+/* instalação na tela de início: manifest embutido, sem arquivo externo */
+(function instalavel(){
+  const icone = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">' +
+    '<rect width="512" height="512" rx="112" fill="#14161F"/>' +
+    '<circle cx="256" cy="256" r="104" fill="#D6224E"/>' +
+    '<rect x="96" y="236" width="40" height="40" rx="8" fill="#F2F3F7"/>' +
+    '<rect x="376" y="236" width="40" height="40" rx="8" fill="#F2F3F7"/></svg>');
+  const manifesto = {
+    name:"Beat & Repeat", short_name:"Beat&Repeat",
+    display:"standalone", orientation:"portrait",
+    background_color:"#14161F", theme_color:"#14161F",
+    icons:[{ src:icone, sizes:"512x512", type:"image/svg+xml", purpose:"any" }]
+  };
+  const link = document.createElement("link");
+  link.rel = "manifest";
+  link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifesto));
+  document.head.appendChild(link);
+
+  const metas = [
+    ["theme-color", "#14161F"],
+    ["apple-mobile-web-app-capable", "yes"],
+    ["apple-mobile-web-app-status-bar-style", "black-translucent"],
+    ["apple-mobile-web-app-title", "Beat & Repeat"]
+  ];
+  metas.forEach(([n, c]) => {
+    const m = document.createElement("meta");
+    m.name = n; m.content = c;
+    document.head.appendChild(m);
+  });
+  const ap = document.createElement("link");
+  ap.rel = "apple-touch-icon"; ap.href = icone;
+  document.head.appendChild(ap);
+})();
+
+Tela.iniciar();
+</script>
