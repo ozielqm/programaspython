@@ -184,11 +184,11 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
 }
 
 /* etapas */
-.etapas{display:flex;gap:6px;padding:14px 18px 0}
+.etapas{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:14px 18px 0}
 .etapa{
-  flex:1;padding:9px 4px 8px;border-radius:8px;text-align:center;
+  padding:9px 2px 8px;border-radius:8px;text-align:center;
   border:1px solid var(--line);background:var(--surface-2);
-  font-size:.76rem;font-weight:500;color:var(--ink-2);line-height:1.2;
+  font-size:.7rem;font-weight:500;color:var(--ink-2);line-height:1.2;
 }
 .etapa .idx{
   display:block;font-family:var(--mono);font-size:.62rem;color:var(--muted);
@@ -264,6 +264,57 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
   text-transform:uppercase;color:var(--beat);min-height:1.2em;
 }
 
+/* conferir a fala */
+.conferir{
+  flex:1;display:flex;flex-direction:column;gap:18px;
+  padding:20px 18px 30px;min-height:330px;justify-content:center;
+}
+.conferir .conta{
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);text-align:center;
+}
+.frase{
+  display:flex;flex-wrap:wrap;gap:7px 9px;justify-content:center;align-items:baseline;
+}
+.palavra{
+  font-size:1.5rem;font-weight:600;letter-spacing:-.02em;color:var(--ink);
+  border-bottom:2px solid transparent;padding-bottom:2px;
+}
+.palavra.certa{color:var(--ok);border-bottom-color:var(--ok)}
+.palavra.faltou{color:var(--beat);border-bottom-color:var(--beat)}
+.conferir .apoio{
+  text-align:center;font-size:.86rem;color:var(--muted);line-height:1.5;
+  max-width:52ch;margin-inline:auto;min-height:1.4em;
+}
+.conferir .ouvido{
+  text-align:center;font-family:var(--mono);font-size:.78rem;color:var(--ink-2);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:8px;
+  padding:9px 12px;line-height:1.5;max-width:44ch;margin-inline:auto;
+}
+.conferir .placar{
+  text-align:center;font-family:var(--mono);font-size:.95rem;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.acoes-mic{display:flex;gap:10px;align-items:center;justify-content:center}
+.mic{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 22px;border-radius:999px;
+  background:var(--beat);color:var(--beat-ink);font-weight:600;font-size:.95rem;
+  box-shadow:var(--shadow);
+}
+.mic[disabled]{opacity:.4;box-shadow:none}
+.mic.gravando{background:var(--ink);color:var(--surface)}
+.mic .bolha{
+  width:10px;height:10px;border-radius:50%;background:currentColor;flex:none;
+}
+.mic.gravando .bolha{animation:pulsar 1s ease-in-out infinite}
+@keyframes pulsar{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.secundario{
+  padding:13px 18px;border-radius:999px;border:1px solid var(--line-strong);
+  background:var(--surface);font-size:.88rem;font-weight:500;color:var(--ink-2);
+}
+.secundario[disabled]{opacity:.4}
+
 /* pergunta de tempo */
 .pergunta{
   margin:0 18px;padding:16px;border:1px solid var(--beat);background:var(--beat-soft);
@@ -323,6 +374,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
 @media (prefers-reduced-motion:reduce){
   .passo,.tk{transition:none}
   .passo.ativo,.passo.ativo.forte{transform:none}
+  .mic.gravando .bolha{animation:none;opacity:.6}
 }
 </style>
 
@@ -352,7 +404,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
       </div>
 
       <p class="rodape-nota" id="notaRodape">
-        <b>Como usar:</b> escolha um chant, toque no botão vermelho e bata o pé junto. Cada chant tem 4 etapas — ouvir, repetir, acompanhar e acelerar — e a próxima só abre depois da anterior. Seu progresso fica salvo neste aparelho.
+        <b>Como usar:</b> escolha um chant, toque no botão vermelho e bata o pé junto. Cada chant tem 5 etapas — ouvir, repetir, sozinho, acelerar e conferir no microfone — e a próxima só abre depois da anterior. Seu progresso fica salvo neste aparelho.
       </p>
     </main>
   </div>
@@ -382,6 +434,19 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
       <div class="letra" id="letra"></div>
       <div class="traducao" id="traducao" hidden></div>
       <div class="sua-vez" id="suaVez"></div>
+    </div>
+
+    <div class="conferir" id="painelConferir" hidden>
+      <div class="conta" id="conferirConta">—</div>
+      <div class="frase" id="conferirFrase"></div>
+      <div class="apoio" id="conferirTraducao"></div>
+      <div class="placar" id="conferirPlacar"></div>
+      <div class="ouvido" id="conferirOuvido" hidden></div>
+      <div class="acoes-mic">
+        <button class="mic" id="btnMic"><span class="bolha"></span><span id="micRotulo">Falar a frase</span></button>
+        <button class="secundario" id="btnPular">Próxima</button>
+      </div>
+      <p class="apoio" id="conferirAviso"></p>
     </div>
 
     <div class="pergunta" id="pergunta" hidden>
@@ -540,10 +605,85 @@ CHANTS.forEach(c => c.linhas.forEach(l => {
 const ETAPAS = [
   { id:"ouvir", nome:"Ouvir", instrucao:"Só escute. Repare em qual sílaba cai a batida — é ela que segura o ritmo do inglês." },
   { id:"repetir", nome:"Repetir", instrucao:"O app fala uma linha e deixa um compasso inteiro em silêncio. Repita em voz alta nesse espaço." },
-  { id:"acompanhar", nome:"Acompanhar", instrucao:"Agora sem a voz do app: só a batida e as palavras acendendo. Você conduz o chant." },
-  { id:"acelerar", nome:"Acelerar", instrucao:"Mesmo chant, mais rápido. Suba um degrau de cada vez, até chegar perto da fala real." }
+  { id:"acompanhar", nome:"Sozinho", instrucao:"Agora sem a voz do app: só a batida e as palavras acendendo. Você conduz o chant." },
+  { id:"acelerar", nome:"Acelerar", instrucao:"Mesmo chant, mais rápido. Suba um degrau de cada vez, até chegar perto da fala real." },
+  { id:"conferir", nome:"Conferir", instrucao:"Sem batida e sem pressa: fale cada linha no microfone e veja, palavra por palavra, o que saiu e o que não saiu." }
 ];
 const ESCADA = [76, 88, 100, 112];
+
+/* ------------------- comparar o que foi dito com a linha -------------------
+   O reconhecedor devolve texto, não fonemas: ele diz se a palavra chegou a ser
+   entendida, não se o /th/ saiu perfeito. Para a comparação ser justa, os dois
+   lados passam pelas mesmas normalizações: contrações abertas ("isn't" =
+   "is not"), números por extenso ("24" = "twenty four") e pontuação fora.     */
+
+const EXPANSOES = {
+  "i'm":"i am", "isn't":"is not", "doesn't":"does not", "don't":"do not",
+  "can't":"can not", "cannot":"can not", "won't":"will not", "aren't":"are not",
+  "what's":"what is", "there's":"there is", "that's":"that is", "let's":"let us",
+  "he's":"he is", "she's":"she is", "it's":"it is", "who's":"who is",
+  "you're":"you are", "we're":"we are", "they're":"they are", "i've":"i have"
+};
+const UNIDADES = ["zero","one","two","three","four","five","six","seven","eight","nine","ten",
+  "eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+const DEZENAS = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+function porExtenso(n){
+  if(n < 20) return UNIDADES[n];
+  if(n < 100){
+    const d = DEZENAS[Math.floor(n / 10)], u = n % 10;
+    return u ? d + " " + UNIDADES[u] : d;
+  }
+  return String(n);
+}
+/* uma palavra escrita vira um ou mais tokens de comparação */
+function chaves(palavra){
+  let p = palavra.toLowerCase().replace(/[\u2018\u2019\u02BC]/g, "'").replace(/[^a-z0-9']/g, "");
+  if(!p) return [];
+  if(EXPANSOES[p]) return EXPANSOES[p].split(" ");
+  if(/^\d+$/.test(p)) return porExtenso(parseInt(p, 10)).split(" ");
+  return [p];
+}
+function emTokens(frase){
+  const fora = [];
+  frase.split(/\s+/).forEach(w => chaves(w).forEach(k => fora.push(k)));
+  return fora;
+}
+/* maior subsequência comum: diz QUAIS tokens esperados apareceram, na ordem */
+function casar(esperados, ouvidos){
+  const n = esperados.length, m = ouvidos.length;
+  const tab = Array.from({ length:n + 1 }, () => new Int32Array(m + 1));
+  for(let i = n - 1; i >= 0; i--)
+    for(let j = m - 1; j >= 0; j--)
+      tab[i][j] = esperados[i] === ouvidos[j]
+        ? tab[i + 1][j + 1] + 1
+        : Math.max(tab[i + 1][j], tab[i][j + 1]);
+  const acertou = new Array(n).fill(false);
+  let i = 0, j = 0;
+  while(i < n && j < m){
+    if(esperados[i] === ouvidos[j]){ acertou[i] = true; i++; j++; }
+    else if(tab[i + 1][j] >= tab[i][j + 1]) i++;
+    else j++;
+  }
+  return acertou;
+}
+/* devolve, para cada palavra EXIBIDA da linha, se ela chegou inteira */
+function avaliarFala(linhaTexto, ouvido){
+  const palavras = linhaTexto.split(/\s+/).filter(Boolean);
+  const esperados = [], dono = [];
+  palavras.forEach((w, iw) => chaves(w).forEach(k => { esperados.push(k); dono.push(iw); }));
+  const acertou = casar(esperados, emTokens(ouvido));
+  const inteiras = palavras.map(() => true);
+  let algum = false;
+  esperados.forEach((_, i) => { if(!acertou[i]) inteiras[dono[i]] = false; else algum = true; });
+  palavras.forEach((w, iw) => { if(!esperados.some((_, i) => dono[i] === iw)) inteiras[iw] = true; });
+  return {
+    palavras,
+    certas:inteiras,
+    total:palavras.length,
+    acertos:inteiras.filter(Boolean).length,
+    vazio:!algum
+  };
+}
 
 /* ----------------------------- memória ----------------------------- */
 const Memoria = {
@@ -567,6 +707,10 @@ const Memoria = {
   registrarBpm(id, bpm){
     const c = this.doChant(id);
     if(bpm > (c.bpmMax || 0)){ c.bpmMax = bpm; this.salvar(); }
+  },
+  registrarFala(id, pct){
+    const c = this.doChant(id);
+    if(pct > (c.falaMax || 0)){ c.falaMax = pct; this.salvar(); }
   },
   marcarDia(){
     const hoje = new Date().toISOString().slice(0,10);
@@ -657,6 +801,152 @@ if(Voz.disponivel){
   Voz.procurar();
   window.speechSynthesis.onvoiceschanged = () => { Voz.procurar(); Tela.atualizarAvisoVoz(); };
 }
+
+/* ------------------------- microfone / conferência -------------------------
+   Usa o reconhecimento de voz do proprio navegador. Ele diz se a palavra foi
+   entendida em ingles, o que ja aponta onde a fala trava; nao e uma nota de
+   pronuncia fonema a fonema, e a tela diz isso ao usuario.                   */
+const Escuta = {
+  Classe: window.SpeechRecognition || window.webkitSpeechRecognition,
+  get disponivel(){ return !!this.Classe; },
+  rec:null, ativo:false,
+
+  ouvir(aoOuvir, aoFalhar){
+    if(!this.disponivel){ aoFalhar("sem-suporte"); return; }
+    this.parar();
+    try{
+      const r = new this.Classe();
+      r.lang = "en-US";
+      r.interimResults = false;
+      r.maxAlternatives = 3;
+      r.continuous = false;
+      r.onresult = ev => {
+        const alt = [];
+        for(let i = 0; i < ev.results.length; i++)
+          for(let k = 0; k < ev.results[i].length; k++)
+            alt.push(ev.results[i][k].transcript);
+        aoOuvir(alt);
+      };
+      r.onerror = ev => aoFalhar(ev.error || "erro");
+      r.onend = () => { this.ativo = false; Conferir.pintarBotao(); };
+      this.rec = r;
+      this.ativo = true;
+      r.start();
+    }catch(e){ this.ativo = false; aoFalhar("falha-ao-iniciar"); }
+  },
+  parar(){
+    this.ativo = false;
+    if(this.rec){ try{ this.rec.stop(); }catch(e){} this.rec = null; }
+  }
+};
+
+const MOTIVOS = {
+  "sem-suporte":"Este navegador não tem reconhecimento de voz. No celular, o Chrome (Android) e o Safari (iPhone) costumam ter.",
+  "not-allowed":"O microfone foi bloqueado. Libere o acesso ao microfone para esta página nas permissões do navegador e tente de novo.",
+  "service-not-allowed":"O navegador não liberou o serviço de reconhecimento aqui. Abrindo o app pelo ícone na tela de início costuma resolver.",
+  "no-speech":"Não ouvi nada. Toque de novo e fale logo depois do apito do microfone.",
+  "audio-capture":"Não encontrei um microfone neste aparelho.",
+  "network":"O reconhecimento de voz precisa de internet. Conecte e tente de novo.",
+  "aborted":"A gravação foi interrompida.",
+  "falha-ao-iniciar":"Não consegui abrir o microfone. Tente novamente."
+};
+
+const Conferir = {
+  iLinha:0, resultado:null, placares:[],
+
+  abrir(){
+    this.iLinha = 0; this.resultado = null; this.placares = [];
+    $("conferirOuvido").hidden = true;
+    $("btnMic").disabled = !Escuta.disponivel;
+    $("conferirAviso").textContent = Escuta.disponivel
+      ? "O app confere se cada palavra foi entendida em inglês — é o que o microfone consegue dizer. Não é nota de pronúncia fonema a fonema."
+      : MOTIVOS["sem-suporte"];
+    this.pintar();
+  },
+  get linha(){ return Tocador.chant.linhas[this.iLinha]; },
+
+  pintar(){
+    const total = Tocador.chant.linhas.length;
+    $("conferirConta").textContent = "linha " + (this.iLinha + 1) + " de " + total;
+    $("conferirTraducao").textContent = this.linha.traducao;
+    const frase = $("conferirFrase");
+    frase.textContent = "";
+    const r = this.resultado;
+    (r ? r.palavras : this.linha.texto.split(/\s+/)).forEach((w, i) => {
+      const el = document.createElement("span");
+      el.className = "palavra" + (r ? (r.certas[i] ? " certa" : " faltou") : "");
+      el.textContent = w;
+      frase.appendChild(el);
+    });
+    $("conferirPlacar").textContent = r ? (r.acertos + " de " + r.total + " palavras reconhecidas") : "";
+    $("btnPular").textContent = (this.iLinha + 1 < total) ? "Próxima" : "Terminar";
+    this.pintarBotao();
+  },
+  pintarBotao(){
+    const b = $("btnMic");
+    b.classList.toggle("gravando", Escuta.ativo);
+    $("micRotulo").textContent = Escuta.ativo ? "Ouvindo… fale agora" : (this.resultado ? "Tentar de novo" : "Falar a frase");
+  },
+
+  gravar(){
+    if(Escuta.ativo){ Escuta.parar(); this.pintarBotao(); return; }
+    Voz.calar();
+    $("conferirOuvido").hidden = true;
+    $("conferirAviso").textContent = "";
+    this.pintarBotao();
+    Escuta.ouvir(
+      alternativas => {
+        /* entre as alternativas do reconhecedor, vale a que mais se aproxima */
+        let melhor = null;
+        alternativas.forEach(txt => {
+          const r = avaliarFala(this.linha.texto, txt);
+          if(!melhor || r.acertos > melhor.acertos){ melhor = r; melhor.ouvido = txt; }
+        });
+        this.resultado = melhor;
+        $("conferirOuvido").textContent = "ouvi: “" + (melhor.ouvido || "").trim() + "”";
+        $("conferirOuvido").hidden = false;
+        $("conferirAviso").textContent = melhor.acertos === melhor.total
+          ? "Saiu inteira. Vá para a próxima."
+          : "As palavras em vermelho não chegaram. Ouça a linha na etapa 1 e repita devagar antes de tentar de novo.";
+        this.pintar();
+      },
+      motivo => {
+        Escuta.parar();
+        $("conferirAviso").textContent = MOTIVOS[motivo] || ("Não deu para usar o microfone (" + motivo + ").");
+        this.pintarBotao();
+      }
+    );
+  },
+
+  avancar(){
+    Escuta.parar();
+    if(this.resultado) this.placares.push(this.resultado.acertos / this.resultado.total);
+    this.resultado = null;
+    $("conferirOuvido").hidden = true;
+    if(this.iLinha + 1 < Tocador.chant.linhas.length){
+      this.iLinha++;
+      $("conferirAviso").textContent = "";
+      this.pintar();
+      return;
+    }
+    /* fim da rodada */
+    const media = this.placares.length
+      ? Math.round(100 * this.placares.reduce((a, b) => a + b, 0) / this.placares.length) : 0;
+    Memoria.concluir(Tocador.chant.id, "conferir");
+    Memoria.registrarFala(Tocador.chant.id, media);
+    $("conferirAviso").textContent = this.placares.length
+      ? "Rodada fechada: " + media + "% das palavras reconhecidas. Toque em Conferir de novo para outra passada."
+      : "Rodada fechada sem nenhuma gravação.";
+    Tela.pintarEtapas();
+    this.abrirDeNovo(media);
+  },
+  abrirDeNovo(media){
+    const aviso = $("conferirAviso").textContent;
+    this.iLinha = 0; this.resultado = null; this.placares = [];
+    this.pintar();
+    $("conferirAviso").textContent = aviso;
+  }
+};
 
 /* ----------------------------- tocador ----------------------------- */
 const Tocador = {
@@ -781,6 +1071,8 @@ const Tela = {
       e.currentTarget.setAttribute("aria-pressed", String(mostrar));
       $("traducao").hidden = !mostrar;
     });
+    $("btnMic").addEventListener("click", () => Conferir.gravar());
+    $("btnPular").addEventListener("click", () => Conferir.avancar());
     $("btnConsegui").addEventListener("click", () => this.subirDegrau(true));
     $("btnAindaNao").addEventListener("click", () => this.subirDegrau(false));
   },
@@ -797,7 +1089,9 @@ const Tela = {
       b.innerHTML =
         '<span class="num">' + String(i + 1).padStart(2, "0") + '</span>' +
         '<span><span class="tit"></span><span class="foco"></span>' +
-        '<span class="tempo">♩ = ' + c.bpm + (salvo.bpmMax ? ' · recorde ' + salvo.bpmMax : '') + '</span></span>' +
+        '<span class="tempo">♩ = ' + c.bpm +
+          (salvo.bpmMax ? ' · recorde ' + salvo.bpmMax : '') +
+          (salvo.falaMax ? ' · fala ' + salvo.falaMax + '%' : '') + '</span></span>' +
         '<span class="passos">' + ETAPAS.map(e =>
           '<i class="' + (salvo.etapas[e.id] ? 'feito' : '') + '"></i>').join("") + '</span>';
       b.querySelector(".tit").textContent = c.titulo;
@@ -813,6 +1107,7 @@ const Tela = {
 
   verLista(){
     Tocador.parar();
+    Escuta.parar();
     $("telaChant").hidden = true;
     $("telaLista").hidden = false;
     this.montarLista();
@@ -870,6 +1165,17 @@ const Tela = {
       alvo.appendChild(b);
     });
     $("instrucao").textContent = (ETAPAS.find(e => e.id === Tocador.etapa) || ETAPAS[0]).instrucao;
+    this.trocarModo();
+  },
+  /* a etapa Conferir não usa a batida: troca o palco pelo painel do microfone */
+  trocarModo(){
+    const conferindo = Tocador.etapa === "conferir";
+    document.querySelector(".palco").hidden = conferindo;
+    $("painelConferir").hidden = !conferindo;
+    $("btnTocar").disabled = conferindo;
+    $("btnTocar").style.opacity = conferindo ? ".35" : "";
+    if(conferindo){ Tocador.parar(); Conferir.abrir(); }
+    else Escuta.parar();
   },
   degrauAtual(){
     const salvo = Memoria.dados.chants[Tocador.chant.id] || { bpmMax:0 };
