@@ -72,6 +72,7 @@ body{
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:2px solid var(--beat);outline-offset:2px;border-radius:4px}
 
+#telaLista, #telaChant{flex:1;display:flex;flex-direction:column}
 .app{
   max-width:470px;
   margin:0 auto;
@@ -738,9 +739,25 @@ const Batida = {
       for(let i = 0; i < n; i++) dados[i] = Math.random() * 2 - 1;
     }
     if(this.ctx.state === "suspended"){ try{ await this.ctx.resume(); }catch(e){} }
+    /* alguns navegadores so liberam o audio no segundo gesto: fica de tocaia
+       para o proximo toque, para o play seguinte ja sair com som */
+    if(this.ctx.state !== "running" && !this.tocaia){
+      this.tocaia = true;
+      const retentar = () => {
+        if(!this.ctx) return;
+        this.ctx.resume().then(() => {
+          if(this.rodando){
+            document.removeEventListener("pointerdown", retentar);
+            this.tocaia = false;
+          }
+        }).catch(() => {});
+      };
+      document.addEventListener("pointerdown", retentar);
+    }
     return this.ctx.state === "running";
   },
-  agora(){ return this.ctx ? this.ctx.currentTime : 0; },
+  get rodando(){ return !!this.ctx && this.ctx.state === "running"; },
+  agora(){ return this.rodando ? this.ctx.currentTime : 0; },
 
   bumbo(t){
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
@@ -764,7 +781,7 @@ const Batida = {
     s.start(t); s.stop(t + 0.09);
   },
   tocarBatida(t, indice){
-    if(!this.ctx) return;
+    if(!this.rodando) return;
     if(indice === 0){ this.bumbo(t); this.chimbal(t, true); }
     else{ this.chimbal(t, false); if(indice === 2) this.bumbo(t); }
   }
@@ -782,6 +799,16 @@ const Voz = {
       vozes.find(v => /^en[-_]GB/i.test(v.lang)) ||
       vozes.find(v => /^en/i.test(v.lang)) || null;
     return this.vozIngles;
+  },
+  /* iOS so libera a sintese se a primeira fala partir de um toque do usuario */
+  preparar(){
+    if(!this.disponivel || this.preparada) return;
+    try{
+      const mudo = new SpeechSynthesisUtterance(" ");
+      mudo.volume = 0;
+      window.speechSynthesis.speak(mudo);
+      this.preparada = true;
+    }catch(e){}
   },
   falar(texto, bpm){
     if(!this.disponivel) return;
@@ -951,25 +978,39 @@ const Conferir = {
 /* ----------------------------- tocador ----------------------------- */
 const Tocador = {
   chant:null, etapa:"ouvir", bpm:76,
-  rodando:false, comVoz:true,
+  rodando:false, comVoz:true, comSom:false,
   iLinha:0, iBatida:0, ehEcoDoAluno:false,
   proximoTempo:0, timer:null, quadro:null, fila:[],
 
   get intervalo(){ return 60 / this.bpm; },
 
+  /* Relogio mestre do transporte. Se o navegador bloquear o audio, o
+     AudioContext congela em zero e nada mais avança — por isso, sem som, o
+     compasso passa a ser marcado pelo cronometro da propria pagina. */
+  relogio(){ return this.comSom ? Batida.agora() : performance.now() / 1000; },
+
   async alternar(){
+    Voz.preparar();                      /* ainda dentro do toque do usuario */
     if(this.rodando) this.parar();
     else await this.iniciar();
   },
   async iniciar(){
-    const ok = await Batida.ligar();
-    if(!ok && !Voz.disponivel){ Tela.avisar("Este navegador bloqueou o áudio. Toque na tela e tente de novo."); return; }
+    this.comSom = await Batida.ligar();
+    if(!this.comSom && !Voz.disponivel){
+      Tela.avisar("Este navegador bloqueou o áudio e não tem voz sintetizada. Abra o app pelo ícone na tela de início, ou tente em outro navegador.");
+      return;
+    }
+    if(!this.comSom){
+      Tela.avisar("O navegador bloqueou o som aqui, então a batida está muda — mas o chant continua: as palavras acendem no tempo e a voz fala as linhas. Abrindo o app pelo ícone na tela de início o som costuma voltar.");
+    }else{
+      Tela.limparAviso();
+    }
     Memoria.marcarDia();
     Tela.pintarOfensiva();
     this.rodando = true;
     this.iLinha = 0; this.iBatida = 0; this.ehEcoDoAluno = false;
     this.fila = [];
-    this.proximoTempo = Batida.agora() + 0.12;
+    this.proximoTempo = this.relogio() + 0.12;
     this.timer = setInterval(() => this.agendar(), 25);
     this.quadro = requestAnimationFrame(() => this.desenhar());
     Tela.pintarTransporte();
@@ -987,7 +1028,7 @@ const Tocador = {
 
   /* agenda ~100 ms à frente usando o relógio do áudio */
   agendar(){
-    const limite = Batida.agora() + 0.1;
+    const limite = this.relogio() + 0.1;
     while(this.rodando && this.proximoTempo < limite){
       const evento = {
         tempo:this.proximoTempo,
@@ -1017,7 +1058,7 @@ const Tocador = {
 
   desenhar(){
     if(!this.rodando) return;
-    const agora = Batida.agora();
+    const agora = this.relogio();
     while(this.fila.length && this.fila[0].tempo <= agora + 0.01){
       const ev = this.fila.shift();
       if(ev.fim){ this.terminarPassada(); return; }
@@ -1172,8 +1213,7 @@ const Tela = {
     const conferindo = Tocador.etapa === "conferir";
     document.querySelector(".palco").hidden = conferindo;
     $("painelConferir").hidden = !conferindo;
-    $("btnTocar").disabled = conferindo;
-    $("btnTocar").style.opacity = conferindo ? ".35" : "";
+    document.querySelector(".transporte").hidden = conferindo;
     if(conferindo){ Tocador.parar(); Conferir.abrir(); }
     else Escuta.parar();
   },
@@ -1269,10 +1309,18 @@ const Tela = {
     const el = $("avisoVoz");
     el.textContent = txt;
     el.hidden = false;
+    el.dataset.travado = "1";
+  },
+  limparAviso(){
+    const el = $("avisoVoz");
+    if(el && el.dataset.travado === "1"){
+      delete el.dataset.travado;
+      this.atualizarAvisoVoz();
+    }
   },
   atualizarAvisoVoz(){
     const el = $("avisoVoz");
-    if(!el) return;
+    if(!el || el.dataset.travado === "1") return;
     if(!Voz.disponivel){
       el.textContent = "Este navegador não tem voz sintetizada. A batida e as palavras acendendo continuam funcionando — leia em voz alta no ritmo.";
       el.hidden = false;

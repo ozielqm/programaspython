@@ -42,6 +42,9 @@ depois da anterior:
 | 4. Acelerar | O mesmo chant na escada 76 → 88 → 100 → 112 BPM. |
 | 5. Conferir | Sem batida: você fala cada linha no microfone e vê, palavra por palavra, o que saiu. |
 
+Na etapa *Conferir* a barra de play/BPM some da tela: nenhum daqueles controles serve ali, e um
+botão de play desativado só parece defeito.
+
 ### Sobre a etapa Conferir
 
 Você toca em **Falar a frase**, fala, e o app pinta cada palavra: **verde** quando ela foi
@@ -96,6 +99,11 @@ e a letra falada saírem diferentes.
 
 ## Limites conhecidos
 
+- **Se o navegador bloquear o som, a batida sai muda mas o chant continua.** O relógio do
+  transporte é independente do `AudioContext` justamente por isso: com o áudio barrado, o
+  compasso passa a ser marcado pelo cronômetro da página, as palavras seguem acendendo no tempo
+  e a voz continua falando. A tela avisa que o som foi bloqueado em vez de simplesmente não
+  fazer nada, e o app fica de tocaia para destravar o áudio no toque seguinte.
 - **Offline no arranque a frio não é garantido.** Um *service worker* precisaria de um arquivo
   `.js` separado, o que não existe num app de arquivo único. Na prática o app não faz nenhuma
   chamada de rede depois de carregado e o cache normal do navegador cobre o uso diário — mas
