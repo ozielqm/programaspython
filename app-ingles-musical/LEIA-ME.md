@@ -70,6 +70,14 @@ Controles no rodapé: play/pause, andamento (BPM), voz liga/desliga e tradução
 O progresso e a sequência de dias ficam salvos no `localStorage` **daquele aparelho** — trocar
 de celular ou limpar os dados do navegador zera o progresso.
 
+## Quando alguma coisa não funcionar
+
+Toque no **?** no canto superior direito da tela inicial. A tela de **Diagnóstico** roda os
+testes de verdade neste aparelho — som, voz e microfone — e mostra, além do resultado de cada
+um, se a página está rodando embutida em outra (que é onde som e microfone costumam ser
+barrados), se o armazenamento funciona e qual é o navegador. No fim da tela há um relatório em
+texto para copiar e mandar para quem for corrigir.
+
 ## Conteúdo
 
 10 chants originais cobrindo o programa A1–A2: cumprimentos, verbo *to be*, perguntas com

@@ -265,6 +265,35 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
   text-transform:uppercase;color:var(--beat);min-height:1.2em;
 }
 
+/* diagnóstico */
+.diag{padding:18px 18px 40px;display:flex;flex-direction:column;gap:16px;flex:1}
+.checagens{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.checagem{
+  display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:start;
+  padding:13px 2px;border-bottom:1px solid var(--line);
+}
+.checagem b{grid-row:1;grid-column:1;font-weight:600;font-size:.92rem;letter-spacing:-.01em}
+.checagem .det{grid-row:2;grid-column:1/-1;font-size:.79rem;color:var(--muted);line-height:1.45}
+.checagem .selo{
+  grid-row:1;grid-column:2;justify-self:end;align-self:start;
+  font-family:var(--mono);font-size:.68rem;
+  padding:4px 8px;border-radius:999px;white-space:nowrap;max-width:100%;
+  border:1px solid var(--line-strong);color:var(--ink-2);background:var(--surface-2);
+}
+.checagem .selo.bom{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+.checagem .selo.ruim{border-color:var(--beat);color:var(--beat);background:var(--beat-soft)}
+.testes{display:flex;flex-wrap:wrap;gap:8px}
+.testes button{
+  padding:11px 15px;border-radius:999px;border:1px solid var(--line-strong);
+  background:var(--surface-2);font-size:.85rem;font-weight:500;
+}
+.relato{
+  width:100%;min-height:150px;resize:vertical;
+  font-family:var(--mono);font-size:.72rem;line-height:1.5;
+  color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:10px;padding:11px;
+}
+
 /* conferir a fala */
 .conferir{
   flex:1;display:flex;flex-direction:column;gap:18px;
@@ -387,6 +416,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
       <div class="marca"><span class="sinal"></span>Beat &amp; Repeat</div>
       <div class="direita">
         <span class="ofensiva" id="ofensiva">— dias</span>
+        <button class="btn-icone" id="btnDiag" title="Diagnóstico" aria-label="Abrir o diagnóstico do aparelho">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.2a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.3-2.6 3.9"/><path d="M12 17.2h.01"/></svg>
+        </button>
         <button class="btn-icone" id="btnTema" title="Alternar tema claro/escuro" aria-label="Alternar tema claro ou escuro">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 13.5A8 8 0 1 1 10.5 4a6.5 6.5 0 0 0 9.5 9.5Z"/></svg>
         </button>
@@ -408,6 +440,32 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;-we
         <b>Como usar:</b> escolha um chant, toque no botão vermelho e bata o pé junto. Cada chant tem 5 etapas — ouvir, repetir, sozinho, acelerar e conferir no microfone — e a próxima só abre depois da anterior. Seu progresso fica salvo neste aparelho.
       </p>
     </main>
+  </div>
+
+  <!-- ===================== TELA: DIAGNÓSTICO ===================== -->
+  <div id="telaDiag" hidden>
+    <header class="cabeca-chant">
+      <button class="voltar" id="diagVoltar" aria-label="Voltar para a lista">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <h1>Diagnóstico</h1>
+        <div class="sub"><span>o que funciona neste aparelho</span></div>
+      </div>
+    </header>
+    <div class="diag">
+      <p class="instrucao" style="padding:0">Toque nos três testes abaixo. Depois copie o texto do fim da tela e me mande — ele diz exatamente o que está travando.</p>
+      <div class="testes">
+        <button id="testeSom">Testar som</button>
+        <button id="testeVoz">Testar voz</button>
+        <button id="testeMic">Testar microfone</button>
+      </div>
+      <div class="checagens" id="diagLista"></div>
+      <textarea class="relato" id="diagRelato" readonly aria-label="Relatório para copiar"></textarea>
+      <div class="testes">
+        <button id="diagCopiar">Copiar relatório</button>
+      </div>
+    </div>
   </div>
 
   <!-- ===================== TELA: CHANT ===================== -->
@@ -813,13 +871,17 @@ const Voz = {
   falar(texto, bpm){
     if(!this.disponivel) return;
     try{
-      window.speechSynthesis.cancel();
+      const ss = window.speechSynthesis;
       const f = new SpeechSynthesisUtterance(texto);
       if(this.vozIngles) f.voice = this.vozIngles;
       f.lang = this.vozIngles ? this.vozIngles.lang : "en-US";
       f.rate = Math.min(1.25, Math.max(0.72, bpm / 84));
       f.pitch = 1;
-      window.speechSynthesis.speak(f);
+      const disparar = () => { try{ ss.speak(f); }catch(e){} };
+      /* cancel() seguido de speak() no mesmo instante trava a sintese em
+         varios Android: quando ha fala em curso, cancela e espera um tico */
+      if(ss.speaking || ss.pending){ ss.cancel(); setTimeout(disparar, 90); }
+      else disparar();
     }catch(e){}
   },
   calar(){ if(this.disponivel){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
@@ -1001,7 +1063,7 @@ const Tocador = {
       return;
     }
     if(!this.comSom){
-      Tela.avisar("O navegador bloqueou o som aqui, então a batida está muda — mas o chant continua: as palavras acendem no tempo e a voz fala as linhas. Abrindo o app pelo ícone na tela de início o som costuma voltar.");
+      Tela.avisar("O navegador bloqueou o som aqui, então a batida está muda — mas o chant continua: as palavras acendem no tempo e a voz fala as linhas. Abra o app pelo ícone na tela de início, ou toque no “?” da tela inicial para ver o diagnóstico.");
     }else{
       Tela.limparAviso();
     }
@@ -1089,6 +1151,154 @@ const Tocador = {
   }
 };
 
+/* --------------------------- diagnóstico ---------------------------
+   Um relato vago ("não funciona") custa uma rodada de chute. Esta tela faz o
+   aparelho responder: roda os testes de verdade e escreve o resultado num
+   texto que o usuário copia e manda.                                        */
+const Diagnostico = {
+  resultados:{ som:"não testado", voz:"não testado", mic:"não testado" },
+
+  ambiente(){
+    let dentroDeIframe = "não";
+    try{ if(window.self !== window.top) dentroDeIframe = "sim"; }
+    catch(e){ dentroDeIframe = "sim (bloqueado)"; }
+    let armazenamento = "ok";
+    try{
+      localStorage.setItem("__t", "1"); localStorage.removeItem("__t");
+    }catch(e){ armazenamento = "bloqueado"; }
+    const vozes = Voz.disponivel ? (window.speechSynthesis.getVoices() || []) : [];
+    const ingles = vozes.filter(v => /^en/i.test(v.lang));
+    return {
+      dentroDeIframe, armazenamento,
+      conexao: navigator.onLine ? "online" : "offline",
+      ctx: Batida.ctx ? Batida.ctx.state : "ainda não criado",
+      sintese: Voz.disponivel ? "existe" : "não existe",
+      vozesTotal: vozes.length,
+      vozesIngles: ingles.length,
+      vozEscolhida: Voz.vozIngles ? (Voz.vozIngles.name + " (" + Voz.vozIngles.lang + ")") : "nenhuma",
+      reconhecimento: Escuta.disponivel ? "existe" : "não existe",
+      tela: window.innerWidth + "x" + window.innerHeight,
+      navegador: navigator.userAgent
+    };
+  },
+
+  abrir(){
+    Tocador.parar(); Escuta.parar();
+    $("telaLista").hidden = true; $("telaChant").hidden = true;
+    $("telaDiag").hidden = false;
+    this.pintar();
+    window.scrollTo(0, 0);
+  },
+
+  pintar(){
+    const a = this.ambiente();
+    const linhas = [
+      ["Som (batida)", this.resultados.som,
+       "Estado do motor de áudio: " + a.ctx + ". É o que toca a batida do chant."],
+      ["Voz em inglês", this.resultados.voz,
+       a.sintese === "existe"
+         ? (a.vozesIngles + " voz(es) em inglês de " + a.vozesTotal + " instaladas. Em uso: " + a.vozEscolhida)
+         : "Este navegador não tem síntese de voz."],
+      ["Microfone", this.resultados.mic,
+       a.reconhecimento === "existe"
+         ? "O navegador tem reconhecimento de voz. Precisa de internet e de permissão."
+         : "Este navegador não tem reconhecimento de voz."],
+      ["Página dentro de moldura", a.dentroDeIframe === "não" ? "ok" : "atenção",
+       a.dentroDeIframe === "não"
+         ? "A página abre direto, sem restrição extra."
+         : "A página roda embutida em outra, e é aí que som e microfone costumam ser barrados. Adicione à tela de início e abra pelo ícone."],
+      ["Memória do progresso", a.armazenamento === "ok" ? "ok" : "falhou",
+       a.armazenamento === "ok" ? "O progresso pode ser salvo neste aparelho." : "O navegador bloqueou o armazenamento (aba anônima?)."],
+      ["Conexão", a.conexao, "Só o microfone precisa de internet; o resto do app não."]
+    ];
+    const alvo = $("diagLista");
+    alvo.textContent = "";
+    linhas.forEach(([nome, estado, detalhe]) => {
+      const div = document.createElement("div");
+      div.className = "checagem";
+      const b = document.createElement("b"); b.textContent = nome;
+      const selo = document.createElement("span");
+      selo.className = "selo" + (/^(ok|funcionou|online)/.test(estado) ? " bom" : /^(falhou|atenção|bloquead|offline|não existe)/.test(estado) ? " ruim" : "");
+      selo.textContent = estado;
+      const d = document.createElement("span"); d.className = "det"; d.textContent = detalhe;
+      div.append(b, selo, d);
+      alvo.appendChild(div);
+    });
+    $("diagRelato").value =
+      "Beat & Repeat — diagnóstico\n" +
+      "som: " + this.resultados.som + "\n" +
+      "voz: " + this.resultados.voz + "\n" +
+      "microfone: " + this.resultados.mic + "\n" +
+      "audiocontext: " + a.ctx + "\n" +
+      "sintese: " + a.sintese + " | vozes: " + a.vozesTotal + " | em ingles: " + a.vozesIngles + "\n" +
+      "voz escolhida: " + a.vozEscolhida + "\n" +
+      "reconhecimento: " + a.reconhecimento + "\n" +
+      "dentro de iframe: " + a.dentroDeIframe + "\n" +
+      "armazenamento: " + a.armazenamento + " | conexao: " + a.conexao + "\n" +
+      "tela: " + a.tela + "\n" +
+      "navegador: " + a.navegador;
+  },
+
+  async testarSom(){
+    this.resultados.som = "testando…"; this.pintar();
+    const ligou = await Batida.ligar();
+    if(!ligou){
+      this.resultados.som = "falhou";
+      this.pintar();
+      return;
+    }
+    const t = Batida.agora();
+    for(let i = 0; i < 4; i++) Batida.tocarBatida(t + 0.1 + i * 0.35, i);
+    this.resultados.som = "funcionou";
+    this.pintar();
+  },
+
+  testarVoz(){
+    if(!Voz.disponivel){ this.resultados.voz = "não existe"; this.pintar(); return; }
+    Voz.preparar();
+    Voz.procurar();
+    this.resultados.voz = "testando…"; this.pintar();
+    try{
+      const f = new SpeechSynthesisUtterance("Hello, how are you?");
+      if(Voz.vozIngles) f.voice = Voz.vozIngles;
+      f.lang = Voz.vozIngles ? Voz.vozIngles.lang : "en-US";
+      f.onstart = () => { this.resultados.voz = "funcionou"; this.pintar(); };
+      f.onerror = ev => { this.resultados.voz = "falhou (" + (ev.error || "erro") + ")"; this.pintar(); };
+      window.speechSynthesis.cancel();
+      setTimeout(() => window.speechSynthesis.speak(f), 90);
+      setTimeout(() => {
+        if(this.resultados.voz === "testando…"){ this.resultados.voz = "falhou (mudo)"; this.pintar(); }
+      }, 4000);
+    }catch(e){ this.resultados.voz = "falhou"; this.pintar(); }
+  },
+
+  testarMic(){
+    if(!Escuta.disponivel){ this.resultados.mic = "não existe"; this.pintar(); return; }
+    this.resultados.mic = "fale alguma coisa…"; this.pintar();
+    Escuta.ouvir(
+      alternativas => { this.resultados.mic = "funcionou — ouvi: " + (alternativas[0] || "").slice(0, 40); this.pintar(); },
+      motivo => { this.resultados.mic = "falhou (" + motivo + ")"; this.pintar(); }
+    );
+  },
+
+  copiar(){
+    const campo = $("diagRelato");
+    campo.removeAttribute("readonly");
+    campo.select();
+    campo.setSelectionRange(0, campo.value.length);
+    let copiou = false;
+    try{ copiou = document.execCommand("copy"); }catch(e){}
+    campo.setAttribute("readonly", "");
+    if(!copiou && navigator.clipboard){
+      navigator.clipboard.writeText(campo.value).then(
+        () => { $("diagCopiar").textContent = "Copiado"; },
+        () => { $("diagCopiar").textContent = "Selecione o texto acima e copie"; });
+      return;
+    }
+    $("diagCopiar").textContent = copiou ? "Copiado" : "Selecione o texto acima e copie";
+  }
+};
+
 /* ----------------------------- telas ----------------------------- */
 const $ = id => document.getElementById(id);
 
@@ -1098,6 +1308,12 @@ const Tela = {
     this.pintarOfensiva();
     this.atualizarAvisoVoz();
     $("btnTema").addEventListener("click", () => this.alternarTema());
+    $("btnDiag").addEventListener("click", () => Diagnostico.abrir());
+    $("diagVoltar").addEventListener("click", () => { $("telaDiag").hidden = true; this.verLista(); });
+    $("testeSom").addEventListener("click", () => Diagnostico.testarSom());
+    $("testeVoz").addEventListener("click", () => Diagnostico.testarVoz());
+    $("testeMic").addEventListener("click", () => Diagnostico.testarMic());
+    $("diagCopiar").addEventListener("click", () => Diagnostico.copiar());
     $("btnVoltar").addEventListener("click", () => this.verLista());
     $("btnTocar").addEventListener("click", () => Tocador.alternar());
     $("bpmMenos").addEventListener("click", () => this.mudarBpm(-4));
@@ -1149,6 +1365,7 @@ const Tela = {
   verLista(){
     Tocador.parar();
     Escuta.parar();
+    $("telaDiag").hidden = true;
     $("telaChant").hidden = true;
     $("telaLista").hidden = false;
     this.montarLista();
