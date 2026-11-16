@@ -7,6 +7,7 @@ Uso rapido (acrescente  -j lotofacil  para a Lotofacil):
     python megasena.py estatisticas           frequencias e pares x impares
     python megasena.py gerar -n 5             gera 5 jogos
     python megasena.py backtest               testa a estrategia no historico
+    python megasena.py simular --vicio forte  simula sorteios com bolas viciadas
     python megasena.py -j lotofacil gerar -n 5
 
 AVISO: nenhum metodo altera a probabilidade de acertar. Todo jogo simples
@@ -42,6 +43,9 @@ JOGOS = {
                       arquivo="resultados_lotofacil.json", faixa=5, faixa_regra="sem_vazia",
                       seq=(6, 16), min_altas=0, acertos=(11, 12, 13, 14, 15)),
 }
+# Simulador de "dados viciados": quanto as bolas viciadas pesam a mais.
+VICIOS = {"nenhum": 0.0, "leve": 0.10, "medio": 0.30, "forte": 1.00}
+
 for _chave, _cfg in JOGOS.items():
     _cfg["chave"] = _chave
     _cfg["combinacoes"] = math.comb(_cfg["total"], _cfg["sorteadas"])
@@ -212,6 +216,34 @@ def mostrar_estatisticas(cfg, sorteios):
     print(f"  Dezenas sorteadas: {pares_total / (qtd * total):.1%} pares e "
           f"{1 - pares_total / (qtd * total):.1%} impares "
           f"(no volante: {n_pares} pares e {cfg['total'] - n_pares} impares)")
+    mostrar_teste_vicio(cfg, sorteios)
+
+
+def qui_quadrado(cfg, sorteios):
+    """Teste de vicio: as frequencias das dezenas sao compativeis com o acaso?
+
+    Devolve (estatistica, graus de liberdade, valor-p). A estatistica leva a
+    correcao (N-1)/(N-q) porque as dezenas saem sem reposicao; o valor-p usa
+    a aproximacao de Wilson-Hilferty.
+    """
+    total, qtd = cfg["total"], cfg["sorteadas"]
+    esperado = len(sorteios) * qtd / total
+    freq = frequencias(cfg, sorteios)
+    x2 = sum((freq[d] - esperado) ** 2 / esperado for d in numeros(cfg)) * (total - 1) / (total - qtd)
+    gl = total - 1
+    z = ((x2 / gl) ** (1 / 3) - (1 - 2 / (9 * gl))) / math.sqrt(2 / (9 * gl))
+    return x2, gl, 0.5 * math.erfc(z / math.sqrt(2))
+
+
+def mostrar_teste_vicio(cfg, sorteios):
+    x2, gl, p = qui_quadrado(cfg, sorteios)
+    chance = "menos de 0,01%" if p < 0.0001 else f"{p:.1%}"
+    print(f"\nTeste de vicio (qui-quadrado): {x2:.1f} com {gl} graus de liberdade")
+    print(f"  Um sorteio honesto produziria diferencas assim ou maiores em {chance} dos casos.")
+    if p < 0.01:
+        print("  Resultado: INDICIO DE VICIO - as diferencas sao grandes demais para ser so acaso.")
+    else:
+        print("  Resultado: compativel com sorteio honesto - nao ha sinal de vicio.")
 
 
 # --------------------------------------------------------------------------
@@ -329,9 +361,11 @@ def backtest(cfg, sorteios, concursos=300, jogos_por_concurso=10, semente=1):
     concursos = min(concursos, len(sorteios) - 60)
     qtd = cfg["sorteadas"]
     rng = random.Random(semente)
-    acertos = {"estrategia": Counter(), "aleatorio": Counter()}
+    acertos = {"estrategia": Counter(), "aleatorio": Counter(), "mais sorteadas*": Counter()}
     for i in range(len(sorteios) - concursos, len(sorteios)):
         resultado = set(sorteios[i]["dezenas"])
+        top = {n for n, _ in frequencias(cfg, sorteios[:i]).most_common(qtd)}
+        acertos["mais sorteadas*"][len(resultado & top)] += 1
         for jogo in gerar_jogos(cfg, sorteios[:i], jogos_por_concurso, qtd, rng):
             acertos["estrategia"][len(resultado & set(jogo))] += 1
         for _ in range(jogos_por_concurso):
@@ -343,12 +377,56 @@ def backtest(cfg, sorteios, concursos=300, jogos_por_concurso=10, semente=1):
     print("                 media de acertos   jogos com exatamente N acertos")
     print("                                   " + "".join(f"{k:>7d}" for k in cfg["acertos"]))
     for nome, cont in acertos.items():
-        media = sum(k * v for k, v in cont.items()) / total
-        print(f"  {nome:<12}      {media:6.3f}       " + "".join(f"{cont[k]:>7d}" for k in cfg["acertos"]))
+        media = sum(k * v for k, v in cont.items()) / sum(cont.values())
+        print(f"  {nome:<15}   {media:6.3f}       " + "".join(f"{cont[k]:>7d}" for k in cfg["acertos"]))
     print(f"  esperado pelo acaso {qtd * qtd / cfg['total']:.3f}")
-    print("\nSe as duas linhas ficam parecidas, a estrategia nao supera o acaso -")
+    print(f"  * um unico jogo por concurso: as {qtd} dezenas mais sorteadas ate entao")
+    print("\nSe as medias ficam parecidas, nenhum metodo supera o acaso -")
     print("e isso que a matematica preve para um sorteio honesto.")
     return acertos
+
+
+# --------------------------------------------------------------------------
+# Simulador de sorteios viciados
+# --------------------------------------------------------------------------
+
+def simular(cfg, vicio="forte", quantidade=3000, semente=None):
+    """Simula sorteios com bolas viciadas e mede duas coisas: se o teste de
+    vicio percebe, e se apostar nas mais sorteadas passa a ganhar do acaso."""
+    rng = random.Random(semente)
+    peso = {n: 1.0 for n in numeros(cfg)}
+    viciadas = []
+    if vicio == "historico":
+        reais = carregar_historico(cfg)
+        if not reais:
+            print(f"Sem historico. Rode primeiro:  python megasena.py -j {cfg['chave']} atualizar")
+            return None
+        freq = frequencias(cfg, reais)
+        media = len(reais) * cfg["sorteadas"] / cfg["total"]
+        peso = {n: max(freq[n] / media, 0.01) for n in numeros(cfg)}
+        descricao = "cada bola com o peso da sua frequencia no historico real"
+    elif VICIOS[vicio] > 0:
+        viciadas = sorted(rng.sample(numeros(cfg), max(3, cfg["total"] // 10)))
+        for n in viciadas:
+            peso[n] = 1.0 + VICIOS[vicio]
+        descricao = f"{len(viciadas)} bolas com {VICIOS[vicio]:.0%} a mais de chance"
+    else:
+        descricao = "nenhum vicio (sorteio honesto)"
+
+    sorteios = [{"concurso": i, "data": "", "dezenas": sortear_ponderado(peso, cfg["sorteadas"], rng)}
+                for i in range(1, quantidade + 1)]
+    print(f"\nSimulacao {cfg['nome']}: {quantidade} sorteios, {descricao}")
+    if viciadas:
+        freq = frequencias(cfg, sorteios)
+        ranking = [n for n, _ in freq.most_common()]
+        print(f"  Bolas viciadas: {fmt(viciadas)}")
+        print("  Posicao delas entre as mais sorteadas: "
+              + ", ".join(f"{ranking.index(n) + 1}o" for n in viciadas))
+    mostrar_teste_vicio(cfg, sorteios)
+    backtest(cfg, sorteios, semente=rng.random())
+    print("\nCom vicio forte, apostar nas mais sorteadas ganha do acaso; com vicio leve")
+    print("ou nenhum, nao. Compare com o backtest e o teste de vicio nos sorteios reais.")
+    return sorteios
 
 
 # --------------------------------------------------------------------------
@@ -373,6 +451,7 @@ def menu(cfg):
         print("4) Testar a estrategia contra o historico (backtest)")
         outro = JOGOS["lotofacil" if cfg["chave"] == "megasena" else "megasena"]
         print(f"5) Trocar para {outro['nome']}")
+        print("6) Simular sorteios com bolas viciadas")
         print("0) Sair")
         opcao = input("Opcao: ").strip()
         if opcao == "1":
@@ -388,6 +467,11 @@ def menu(cfg):
         elif opcao == "5":
             cfg = outro
             sorteios = carregar_historico(cfg)
+        elif opcao == "6":
+            opcoes = list(VICIOS) + ["historico"]
+            print("Vicio: " + ", ".join(f"{i}) {v}" for i, v in enumerate(opcoes, 1)))
+            simular(cfg, opcoes[ler_int("Opcao", 4, 1, len(opcoes)) - 1],
+                    ler_int("Quantos sorteios simular", 3000, 200, 20000))
         elif opcao == "0":
             break
 
@@ -405,6 +489,10 @@ def main():
     p = sub.add_parser("backtest", help="compara a estrategia com jogos aleatorios")
     p.add_argument("-c", "--concursos", type=int, default=300)
     p.add_argument("-n", "--jogos", type=int, default=10)
+    p = sub.add_parser("simular", help="simula sorteios com bolas viciadas")
+    p.add_argument("-v", "--vicio", choices=list(VICIOS) + ["historico"], default="forte",
+                   help="tamanho do vicio; 'historico' usa as frequencias reais como pesos")
+    p.add_argument("-s", "--sorteios", type=int, default=3000)
     p = sub.add_parser("importar", help="importa sorteios de um arquivo CSV")
     p.add_argument("arquivo")
     args = parser.parse_args()
@@ -423,6 +511,8 @@ def main():
         mostrar_jogos(cfg, carregar_historico(cfg), max(1, args.jogos), dezenas)
     elif args.comando == "backtest":
         backtest(cfg, carregar_historico(cfg), args.concursos, args.jogos)
+    elif args.comando == "simular":
+        simular(cfg, args.vicio, max(200, min(20000, args.sorteios)))
     elif args.comando == "importar":
         importar_csv(cfg, args.arquivo)
 

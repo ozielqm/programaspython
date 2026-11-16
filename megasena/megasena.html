@@ -85,6 +85,27 @@
     <div id="back"></div>
   </section>
 
+  <section>
+    <h2>Simulador de bolas viciadas – <span class="nomeJogo"></span></h2>
+    <p class="nota" style="margin:0 0 10px">Simula sorteios em que algumas bolas saem mais que as outras, para ver se o teste de vício percebe e se apostar nas mais sorteadas passa a ganhar do acaso. Funciona sem internet.</p>
+    <div class="linha">
+      <label>Vício
+        <select id="simVicio">
+          <option value="0">Nenhum (honesto)</option>
+          <option value="0.1">Leve (+10%)</option>
+          <option value="0.3">Médio (+30%)</option>
+          <option value="1" selected>Forte (+100%)</option>
+          <option value="historico">Igual ao histórico real</option>
+        </select>
+      </label>
+      <label>Sorteios
+        <select id="simQtd"><option>1000</option><option selected>3000</option><option>5000</option></select>
+      </label>
+      <button id="btSim">Simular</button>
+    </div>
+    <div id="sim"></div>
+  </section>
+
   <section class="aviso">
     <h2>Leia antes de apostar</h2>
     <p class="nota">Nenhum método aumenta a chance de acertar: cada jogo simples da <span class="nomeJogo"></span> tem 1 chance em <span id="chanceTotal"></span> de acertar as <span id="qtdSorteadas"></span> dezenas, e o sorteio não tem memória. Este app usa as dezenas mais sorteadas e o equilíbrio entre pares e ímpares para montar jogos com "cara" de sorteio típico e evita padrões populares, o que só reduz a chance de <b>dividir</b> o prêmio. A única forma de aumentar a chance de ganhar é apostar mais combinações. Jogue apenas o que pode perder.</p>
@@ -219,6 +240,28 @@ function gerarJogos(lista, qtd, dezenas) {
   return jogos;
 }
 
+// ---------- teste de vício ----------
+function erfc(x) {                       // Abramowitz-Stegun 7.1.26
+  const a = Math.abs(x), k = 1 / (1 + 0.3275911 * a);
+  const y = ((((1.061405429 * k - 1.453152027) * k + 1.421413741) * k - 0.284496736) * k + 0.254829592) * k * Math.exp(-a * a);
+  return x >= 0 ? y : 2 - y;
+}
+function quiQuadrado(lista) {            // correção (N-1)/(N-q): dezenas saem sem reposição
+  const N = cfg.total, q = cfg.sorteadas, esp = lista.length * q / N, f = frequencias(lista);
+  let x2 = 0;
+  for (const d of cfg.nums) x2 += (f[d] - esp) * (f[d] - esp) / esp;
+  x2 *= (N - 1) / (N - q);
+  const gl = N - 1, z = (Math.cbrt(x2 / gl) - (1 - 2 / (9 * gl))) / Math.sqrt(2 / (9 * gl));   // Wilson-Hilferty
+  return {x2, gl, p: 0.5 * erfc(z / Math.SQRT2)};
+}
+function htmlTesteVicio(lista) {
+  const r = quiQuadrado(lista), chance = r.p < 0.0001 ? "menos de 0,01%" : pct(r.p);
+  return `<p class="nota"><b>Teste de vício (qui-quadrado):</b> ${r.x2.toFixed(1).replace(".", ",")} com ${r.gl} graus de liberdade. ` +
+    `Um sorteio honesto produziria diferenças assim ou maiores em ${chance} dos casos. ` +
+    (r.p < 0.01 ? "<b>Indício de vício</b>: as diferenças são grandes demais para ser só acaso."
+                : "<b>Compatível com sorteio honesto</b>: não há sinal de vício.") + "</p>";
+}
+
 // ---------- tela ----------
 function mostrarJogos() {
   const qtd = Math.min(50, Math.max(1, parseInt($("qtd").value) || 1)), dz = +$("dez").value;
@@ -241,6 +284,7 @@ function pintar(msg) {
     : "Nenhum sorteio salvo. Toque em Atualizar histórico.");
   $("secEst").hidden = $("secBack").hidden = !n;
   $("back").innerHTML = "";
+  if (!msg) $("sim").innerHTML = "";
   if (!n) return;
   const f = frequencias(sorteios), ord = cfg.nums.slice().sort((a, b) => f[b] - f[a]);
   const min = Math.min(...f.slice(1)), max = Math.max(...f.slice(1)), top = cfg.total > 30 ? 10 : 5;
@@ -258,29 +302,59 @@ function pintar(msg) {
   for (let p = Math.max(0, q - nImp); p <= Math.min(q, nPares); p++)
     h += `<tr><td>${p} / ${q - p}</td><td>${div[p]}</td><td>${pct(div[p] / n)}</td><td>${pct(comb(nPares, p) * comb(nImp, q - p) / cfg.combinacoes)}</td></tr>`;
   h += `</table><p class="nota">Dezenas sorteadas no total: ${pct(totalPares / (q * n))} pares e ${pct(1 - totalPares / (q * n))} ímpares (no volante há ${nPares} pares e ${nImp} ímpares).</p>`;
-  $("estat").innerHTML = h;
+  $("estat").innerHTML = h + htmlTesteVicio(sorteios);
 }
-function backtest() {
-  if (sorteios.length < 100) { $("back").innerHTML = '<p class="nota">Histórico insuficiente (mínimo 100 sorteios).</p>'; return; }
-  const q = cfg.sorteadas, conc = Math.min(300, sorteios.length - 60), porConc = 10;
-  const ac = {"Estratégia": new Array(q + 1).fill(0), "Aleatório": new Array(q + 1).fill(0)};
+function htmlBacktest(lista) {
+  if (lista.length < 100) return '<p class="nota">Histórico insuficiente (mínimo 100 sorteios).</p>';
+  const q = cfg.sorteadas, conc = Math.min(300, lista.length - 60), porConc = 10, TOP = "Mais sorteadas*";
+  const ac = {"Estratégia": new Array(q + 1).fill(0), "Aleatório": new Array(q + 1).fill(0), [TOP]: new Array(q + 1).fill(0)};
   const iguais = new Array(cfg.total + 1).fill(1);
-  for (let i = sorteios.length - conc; i < sorteios.length; i++) {
-    const res = sorteios[i].dezenas;
-    for (const j of gerarJogos(sorteios.slice(0, i), porConc, q)) ac["Estratégia"][j.filter(d => res.includes(d)).length]++;
+  const f = frequencias(lista.slice(0, lista.length - conc));
+  for (let i = lista.length - conc; i < lista.length; i++) {
+    const res = lista[i].dezenas;
+    for (const j of gerarJogos(lista.slice(0, i), porConc, q)) ac["Estratégia"][j.filter(d => res.includes(d)).length]++;
     for (let k = 0; k < porConc; k++) ac["Aleatório"][sortearPonderado(iguais, q).filter(d => res.includes(d)).length]++;
+    const top = cfg.nums.slice().sort((a, b) => f[b] - f[a]).slice(0, q);
+    ac[TOP][top.filter(d => res.includes(d)).length]++;
+    for (const d of res) f[d]++;
   }
-  const total = conc * porConc;
   let h = `<p class="nota">${conc} concursos × ${porConc} jogos, usando só os sorteios anteriores a cada concurso.</p>` +
     '<div class="rolagem"><table><tr><th>Método</th><th>Média</th>' + cfg.acertos.map(k => `<th>${k}</th>`).join("") + "</tr>";
   for (const nome in ac) {
-    const c = ac[nome], media = c.reduce((s, v, k) => s + k * v, 0) / total;
+    const c = ac[nome], media = c.reduce((s, v, k) => s + k * v, 0) / c.reduce((s, v) => s + v, 0);
     h += `<tr><td>${nome}</td><td>${media.toFixed(3).replace(".", ",")}</td>` + cfg.acertos.map(k => `<td>${c[k]}</td>`).join("") + "</tr>";
   }
-  h += `<tr><td>Esperado pelo acaso</td><td>${(q * q / cfg.total).toFixed(3).replace(".", ",")}</td><td colspan="${cfg.acertos.length}"></td></tr></table></div>` +
-    `<p class="nota">Média = média de acertos por jogo. Colunas ${cfg.acertos[0]} a ${q} = quantos jogos tiveram exatamente esse número de acertos.</p>` +
-    '<p class="nota">Se as duas linhas ficam parecidas, a estratégia não supera o acaso – é o que a matemática prevê para um sorteio honesto.</p>';
-  $("back").innerHTML = h;
+  return h + `<tr><td>Esperado pelo acaso</td><td>${(q * q / cfg.total).toFixed(3).replace(".", ",")}</td><td colspan="${cfg.acertos.length}"></td></tr></table></div>` +
+    `<p class="nota">Média = média de acertos por jogo. Colunas ${cfg.acertos[0]} a ${q} = quantos jogos tiveram exatamente esse número de acertos.<br>` +
+    `* Um único jogo por concurso: as ${q} dezenas mais sorteadas até então.</p>`;
+}
+function backtest() {
+  $("back").innerHTML = htmlBacktest(sorteios) +
+    '<p class="nota">Se as médias ficam parecidas, nenhum método supera o acaso – é o que a matemática prevê para um sorteio honesto.</p>';
+}
+function simular() {
+  const tipo = $("simVicio").value, n = +$("simQtd").value, q = cfg.sorteadas;
+  const p = new Array(cfg.total + 1).fill(1);
+  let viciadas = [], descricao = "nenhum vício (sorteio honesto)";
+  if (tipo === "historico") {
+    if (!sorteios.length) { $("sim").innerHTML = '<p class="nota">Sem histórico salvo. Atualize o histórico primeiro.</p>'; return; }
+    const f = frequencias(sorteios), media = sorteios.length * q / cfg.total;
+    for (const d of cfg.nums) p[d] = Math.max(f[d] / media, 0.01);
+    descricao = "cada bola com o peso da sua frequência no histórico real";
+  } else if (+tipo > 0) {
+    viciadas = sortearPonderado(p.slice(), Math.max(3, Math.floor(cfg.total / 10)));
+    viciadas.forEach(d => p[d] = 1 + +tipo);
+    descricao = `${viciadas.length} bolas com ${Math.round(tipo * 100)}% a mais de chance`;
+  }
+  const sim = [];
+  for (let i = 1; i <= n; i++) sim.push({concurso: i, data: "", dezenas: sortearPonderado(p, q)});
+  let h = `<p class="nota"><b>${n} sorteios simulados:</b> ${descricao}.</p>`;
+  if (viciadas.length) {
+    const f = frequencias(sim), ord = cfg.nums.slice().sort((a, b) => f[b] - f[a]);
+    h += `<p class="nota"><b>Bolas viciadas:</b> ${viciadas.map(f2).join(" ")}<br>Posição delas entre as mais sorteadas: ${viciadas.map(d => (ord.indexOf(d) + 1) + "º").join(", ")}</p>`;
+  }
+  $("sim").innerHTML = h + htmlTesteVicio(sim) + htmlBacktest(sim) +
+    '<p class="nota">Com vício forte, apostar nas mais sorteadas ganha do acaso; com vício leve ou nenhum, não. Compare com o teste de vício e o teste da estratégia nos sorteios reais.</p>';
 }
 function escolherJogo(chave, baixar) {
   cfg = JOGOS[chave] || JOGOS.megasena;
@@ -302,6 +376,7 @@ document.querySelectorAll(".abas button").forEach(b => b.onclick = () => escolhe
 $("btAtualizar").onclick = atualizar;
 $("btGerar").onclick = mostrarJogos;
 $("btBack").onclick = () => { $("back").innerHTML = '<p class="nota">Calculando...</p>'; setTimeout(backtest, 30); };
+$("btSim").onclick = () => { $("sim").innerHTML = '<p class="nota">Simulando...</p>'; setTimeout(simular, 30); };
 $("btCsv").onclick = () => $("arqCsv").click();
 $("arqCsv").onchange = e => { const a = e.target.files[0]; if (a) a.text().then(importarCsv); e.target.value = ""; };
 escolherJogo(ler("loterias_jogo") || "megasena", true);

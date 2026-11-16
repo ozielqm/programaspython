@@ -58,9 +58,33 @@ O que realmente tem efeito:
 
 Jogue apenas o que pode perder.
 
+## Teoria dos "dados viciados"
+
+Se as bolas tivessem um defeito físico, algumas dezenas sairiam mais que as
+outras e apostar nelas daria vantagem. O programa tem duas ferramentas para
+checar isso:
+
+- **Teste de vício (qui-quadrado)** – aparece em `estatisticas`. Diz se as
+  diferenças de frequência entre as dezenas são compatíveis com um sorteio
+  honesto ou grandes demais para ser só acaso.
+- **Simulador** – sorteia com bolas viciadas e mostra se o teste percebe o
+  vício e se apostar nas mais sorteadas passa a ganhar do acaso:
+
+```
+python megasena.py simular --vicio forte      # nenhum, leve, medio, forte
+python megasena.py simular --vicio historico  # usa as frequências reais como pesos
+python megasena.py -j lotofacil simular -v medio -s 5000
+```
+
+O `backtest` e o simulador comparam três métodos: a estratégia do programa,
+jogos aleatórios e um jogo só com as dezenas mais sorteadas. Nas simulações,
+apostar nas mais sorteadas só ganha do acaso com vício forte (bolas com o
+dobro de chance); com vício de 10% o teste nem detecta e não há ganho.
+
 ## Versão para celular e computador
 
 `megasena.html` é o mesmo gerador em um único arquivo, sem instalar nada:
 basta abrir no navegador (Chrome, Safari, Edge...) do computador ou do
-celular e escolher Mega-Sena ou Lotofácil nas abas do topo. O histórico
+celular e escolher Mega-Sena ou Lotofácil nas abas do topo. Inclui o teste de vício
+nas estatísticas e o simulador de bolas viciadas (que funciona sem internet). O histórico
 baixado fica salvo no próprio aparelho.
