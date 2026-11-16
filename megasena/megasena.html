@@ -32,6 +32,7 @@
   table { width:100%; border-collapse:collapse; font-size:.9rem; font-variant-numeric:tabular-nums; }
   th, td { text-align:right; padding:5px 6px; border-bottom:1px solid var(--borda); }
   th:first-child, td:first-child { text-align:left; }
+  .rolagem { overflow-x:auto; }
   .grade { display:grid; grid-template-columns:repeat(10, 1fr); gap:4px; }
   .cel { border-radius:6px; padding:5px 0; text-align:center; font-size:.75rem; color:#fff; font-variant-numeric:tabular-nums; }
   .cel b { display:block; font-size:.9rem; }
@@ -249,12 +250,13 @@ function backtest() {
   }
   const total = conc * porConc;
   let h = `<p class="nota">${conc} concursos × ${porConc} jogos, usando só os sorteios anteriores a cada concurso.</p>` +
-    "<table><tr><th>Método</th><th>Média de acertos</th><th>3+ acertos</th><th>Quadras</th><th>Quinas</th><th>Senas</th></tr>";
+    '<div class="rolagem"><table><tr><th>Método</th><th>Média</th><th>3+</th><th>Quadra</th><th>Quina</th><th>Sena</th></tr>';
   for (const nome in ac) {
     const c = ac[nome], media = c.reduce((s, v, k) => s + k * v, 0) / total;
     h += `<tr><td>${nome}</td><td>${media.toFixed(3).replace(".", ",")}</td><td>${c[3] + c[4] + c[5] + c[6]}</td><td>${c[4]}</td><td>${c[5]}</td><td>${c[6]}</td></tr>`;
   }
-  h += '<tr><td>Esperado pelo acaso</td><td>0,600</td><td colspan="4"></td></tr></table>' +
+  h += '<tr><td>Esperado pelo acaso</td><td>0,600</td><td colspan="4"></td></tr></table></div>' +
+    '<p class="nota">Média = média de acertos por jogo; 3+ = jogos com 3 ou mais acertos.</p>' +
     '<p class="nota">Se as duas linhas ficam parecidas, a estratégia não supera o acaso – é o que a matemática prevê para um sorteio honesto.</p>';
   $("back").innerHTML = h;
 }
