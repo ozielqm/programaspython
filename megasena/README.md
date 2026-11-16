@@ -45,3 +45,9 @@ O que realmente tem efeito:
   datas, sequências e desenhos no volante.
 
 Jogue apenas o que pode perder.
+
+## Versão para celular e computador
+
+`megasena.html` é o mesmo gerador em um único arquivo, sem instalar nada:
+basta abrir no navegador (Chrome, Safari, Edge...) do computador ou do
+celular. O histórico baixado fica salvo no próprio aparelho.
