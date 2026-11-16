@@ -34,12 +34,13 @@ JANELA_RECENTE = 50
 # total: dezenas no volante; sorteadas: dezenas por sorteio;
 # seq: (maior sequencia de consecutivas aceita, ate quantas dezenas por jogo);
 # faixa: tamanho da faixa/linha do volante; min_altas: minimo de dezenas > 31;
-# acertos: quantidades de acertos mostradas no backtest.
+# acertos: quantidades de acertos mostradas no backtest;
+# preco: valor da aposta simples em reais (confira na loterica; a Caixa reajusta).
 JOGOS = {
-    "megasena": dict(nome="Mega-Sena", total=60, sorteadas=6, aposta_max=15,
+    "megasena": dict(nome="Mega-Sena", total=60, sorteadas=6, aposta_max=15, preco=6.00,
                      arquivo="resultados.json", faixa=10, faixa_regra="max_metade",
                      seq=(2, 8), min_altas=2, acertos=(3, 4, 5, 6)),
-    "lotofacil": dict(nome="Lotofacil", total=25, sorteadas=15, aposta_max=20,
+    "lotofacil": dict(nome="Lotofacil", total=25, sorteadas=15, aposta_max=20, preco=3.50,
                       arquivo="resultados_lotofacil.json", faixa=5, faixa_regra="sem_vazia",
                       seq=(6, 16), min_altas=0, acertos=(11, 12, 13, 14, 15)),
 }
@@ -53,6 +54,11 @@ for _chave, _cfg in JOGOS.items():
 
 def numeros(cfg):
     return range(1, cfg["total"] + 1)
+
+
+def reais(valor):
+    """Formata um valor em reais: 1234.5 -> R$ 1.234,50."""
+    return "R$ " + f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def ponto(n):
@@ -333,7 +339,7 @@ def gerar_jogos(cfg, sorteios, quantidade=1, dezenas=None, rng=None):
     return jogos
 
 
-def mostrar_jogos(cfg, sorteios, quantidade, dezenas):
+def mostrar_jogos(cfg, sorteios, quantidade, dezenas, preco=None):
     if not sorteios:
         print("Sem historico: os jogos serao equilibrados, mas sem usar frequencias.")
         print(f"Rode  python megasena.py -j {cfg['chave']} atualizar  para baixar os sorteios.")
@@ -342,7 +348,13 @@ def mostrar_jogos(cfg, sorteios, quantidade, dezenas):
     for i, jogo in enumerate(jogos, 1):
         pares = sum(1 for d in jogo if d % 2 == 0)
         print(f"  Jogo {i:2d}: {fmt(jogo)}   ({pares} pares / {dezenas - pares} impares, soma {sum(jogo)})")
-    apostas = quantidade * math.comb(dezenas, cfg["sorteadas"])
+    preco = cfg["preco"] if preco is None else preco
+    por_jogo = math.comb(dezenas, cfg["sorteadas"])  # apostas simples em cada jogo
+    apostas = quantidade * por_jogo
+    print(f"\nValor: {reais(por_jogo * preco)} por jogo", end="")
+    if por_jogo > 1:
+        print(f" ({ponto(por_jogo)} apostas simples de {reais(preco)})", end="")
+    print(f"  |  Total dos {quantidade} jogo(s): {reais(apostas * preco)}")
     print(f"\nChance de acertar as {cfg['sorteadas']} dezenas com esses jogos: "
           f"1 em {ponto(cfg['combinacoes'] / apostas)}")
     print("(a mesma de quaisquer outros jogos distintos na mesma quantidade)")
@@ -486,6 +498,8 @@ def main():
     p = sub.add_parser("gerar", help="gera jogos")
     p.add_argument("-n", "--jogos", type=int, default=3)
     p.add_argument("-d", "--dezenas", type=int, help="dezenas por jogo (Mega 6-15, Lotofacil 15-20)")
+    p.add_argument("-p", "--preco", type=float,
+                   help="valor da aposta simples em reais (padrao: Mega 6.00, Lotofacil 3.50)")
     p = sub.add_parser("backtest", help="compara a estrategia com jogos aleatorios")
     p.add_argument("-c", "--concursos", type=int, default=300)
     p.add_argument("-n", "--jogos", type=int, default=10)
@@ -508,7 +522,7 @@ def main():
         dezenas = args.dezenas or cfg["sorteadas"]
         if not cfg["sorteadas"] <= dezenas <= cfg["aposta_max"]:
             parser.error(f"{cfg['nome']}: dezenas por jogo de {cfg['sorteadas']} a {cfg['aposta_max']}")
-        mostrar_jogos(cfg, carregar_historico(cfg), max(1, args.jogos), dezenas)
+        mostrar_jogos(cfg, carregar_historico(cfg), max(1, args.jogos), dezenas, args.preco)
     elif args.comando == "backtest":
         backtest(cfg, carregar_historico(cfg), args.concursos, args.jogos)
     elif args.comando == "simular":

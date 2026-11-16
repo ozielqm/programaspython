@@ -23,6 +23,15 @@ O histórico fica em `resultados.json` (Mega-Sena) e
 cada linha: concurso, data e as dezenas sorteadas (é o formato da planilha
 de resultados do site da Caixa salva como CSV).
 
+## Valor das apostas
+
+Ao gerar jogos, o programa mostra o valor de cada jogo e o total. Os preços
+da aposta simples usados são R$ 6,00 (Mega-Sena) e R$ 3,50 (Lotofácil); um
+jogo com mais dezenas vale várias apostas simples (8 dezenas na Mega-Sena =
+28 apostas = R$ 168,00). A Caixa reajusta os preços de tempos em tempos:
+use `-p` para informar outro valor (`gerar -n 3 -p 6.50`) ou, no app HTML,
+altere o campo "Aposta simples (R$)".
+
 ## A estratégia
 
 1. **Peso por frequência** – cada dezena recebe um peso: 60% pela frequência

@@ -69,6 +69,7 @@
     <div class="linha">
       <label>Jogos <input type="number" id="qtd" min="1" max="50" value="3"></label>
       <label>Dezenas <select id="dez"></select></label>
+      <label>Aposta simples (R$) <input type="number" id="preco" min="0" step="0.5" inputmode="decimal"></label>
       <button id="btGerar">Gerar</button>
     </div>
     <div id="jogos"></div>
@@ -119,12 +120,13 @@ const JANELA = 50;
 // total: dezenas no volante; sorteadas: dezenas por sorteio; seq: [maior sequência aceita, até quantas dezenas];
 // faixa: tamanho da linha do volante; minAltas: mínimo de dezenas > 31; acertos: colunas do teste.
 const JOGOS = {
-  megasena:  {nome: "Mega-Sena", total: 60, sorteadas: 6,  apostaMax: 15, faixa: 10, faixaRegra: "maxMetade", seq: [2, 8],  minAltas: 2, acertos: [3, 4, 5, 6], colunas: 10},
-  lotofacil: {nome: "Lotofácil", total: 25, sorteadas: 15, apostaMax: 20, faixa: 5,  faixaRegra: "semVazia",  seq: [6, 16], minAltas: 0, acertos: [11, 12, 13, 14, 15], colunas: 5},
+  megasena:  {nome: "Mega-Sena", preco: 6.00, total: 60, sorteadas: 6,  apostaMax: 15, faixa: 10, faixaRegra: "maxMetade", seq: [2, 8],  minAltas: 2, acertos: [3, 4, 5, 6], colunas: 10},
+  lotofacil: {nome: "Lotofácil", preco: 3.50, total: 25, sorteadas: 15, apostaMax: 20, faixa: 5,  faixaRegra: "semVazia",  seq: [6, 16], minAltas: 0, acertos: [11, 12, 13, 14, 15], colunas: 5},
 };
 const $ = id => document.getElementById(id);
 const f2 = n => String(n).padStart(2, "0");
 const pct = x => (x * 100).toFixed(1).replace(".", ",") + "%";
+const reais = v => v.toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
 const milhar = n => Math.round(n).toLocaleString("pt-BR");
 function comb(n, k) { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return Math.round(r); }
 for (const chave in JOGOS) {
@@ -263,15 +265,23 @@ function htmlTesteVicio(lista) {
 }
 
 // ---------- tela ----------
+function lerPreco() {
+  const v = parseFloat(String($("preco").value).replace(",", "."));
+  return v >= 0 ? v : cfg.preco;
+}
 function mostrarJogos() {
   const qtd = Math.min(50, Math.max(1, parseInt($("qtd").value) || 1)), dz = +$("dez").value;
   const jogos = gerarJogos(sorteios, qtd, dz);
+  const porJogo = comb(dz, cfg.sorteadas), preco = lerPreco();
   let h = "";
   jogos.forEach((j, i) => {
     const pares = j.filter(d => d % 2 === 0).length;
     h += '<div class="jogo">' + j.map(d => `<span class="bola${d % 2 ? "" : " p"}">${f2(d)}</span>`).join("") +
-      `<span class="info">Jogo ${i + 1}: ${pares} pares / ${dz - pares} ímpares, soma ${j.reduce((a, b) => a + b, 0)}</span></div>`;
+      `<span class="info">Jogo ${i + 1}: ${pares} pares / ${dz - pares} ímpares, soma ${j.reduce((a, b) => a + b, 0)} · ${reais(porJogo * preco)}</span></div>`;
   });
+  h += `<p class="nota" id="valor"><b>Valor total: ${reais(qtd * porJogo * preco)}</b> – ${qtd} jogo(s) de ${reais(porJogo * preco)}` +
+    (porJogo > 1 ? ` (cada jogo de ${dz} dezenas vale ${milhar(porJogo)} apostas simples de ${reais(preco)})` : "") +
+    ". Confira o preço na lotérica: a Caixa reajusta de tempos em tempos.</p>";
   h += `<p class="nota">Chance de acertar as ${cfg.sorteadas} dezenas com esses jogos: 1 em ${milhar(cfg.combinacoes / (qtd * comb(dz, cfg.sorteadas)))} ` +
     "(a mesma de quaisquer outros jogos distintos na mesma quantidade)." +
     (sorteios.length ? "" : " Sem histórico: os jogos são equilibrados, mas não usam as frequências.") + "</p>";
@@ -366,6 +376,7 @@ function escolherJogo(chave, baixar) {
   $("qtdSorteadas").textContent = cfg.sorteadas;
   $("dez").innerHTML = "";
   for (let d = cfg.sorteadas; d <= cfg.apostaMax; d++) $("dez").add(new Option(d, d));
+  $("preco").value = (parseFloat(ler(cfg.chave + "_preco")) || cfg.preco).toFixed(2);
   carregar();
   pintar();
   mostrarJogos();
@@ -375,6 +386,7 @@ function escolherJogo(chave, baixar) {
 document.querySelectorAll(".abas button").forEach(b => b.onclick = () => escolherJogo(b.dataset.jogo, true));
 $("btAtualizar").onclick = atualizar;
 $("btGerar").onclick = mostrarJogos;
+$("preco").onchange = () => { gravar(cfg.chave + "_preco", String(lerPreco())); mostrarJogos(); };
 $("btBack").onclick = () => { $("back").innerHTML = '<p class="nota">Calculando...</p>'; setTimeout(backtest, 30); };
 $("btSim").onclick = () => { $("sim").innerHTML = '<p class="nota">Simulando...</p>'; setTimeout(simular, 30); };
 $("btCsv").onclick = () => $("arqCsv").click();
