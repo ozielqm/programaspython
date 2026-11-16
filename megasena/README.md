@@ -78,8 +78,9 @@ python megasena.py -j lotofacil simular -v medio -s 5000
 
 O `backtest` e o simulador comparam três métodos: a estratégia do programa,
 jogos aleatórios e um jogo só com as dezenas mais sorteadas. Nas simulações,
-apostar nas mais sorteadas só ganha do acaso com vício forte (bolas com o
-dobro de chance); com vício de 10% o teste nem detecta e não há ganho.
+apostar nas mais sorteadas ganha claramente do acaso com vício forte (bolas
+com o dobro de chance); com vício de 10% o teste não detecta e o ganho, se
+existe, se perde no ruído.
 
 ## Versão para celular e computador
 
